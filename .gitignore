@@ -1,0 +1,9 @@
+.vs/
+[Bb]uild/
+[Dd]ebug/
+[Rr]elease/
+*.user
+*.suo
+*.obj
+*.pdb
+*.ilk

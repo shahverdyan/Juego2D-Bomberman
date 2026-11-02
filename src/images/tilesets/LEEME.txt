@@ -1,0 +1,2 @@
+Fuente original conservada. world1-atlas.png contiene 16 recortes exactos de 16x16.
+world1-atlas.json documenta las coordenadas y creditos. Ver docs/MAPAS.md.

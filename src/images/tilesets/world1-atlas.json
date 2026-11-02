@@ -1,0 +1,169 @@
+{
+  "source": "Game Boy _ GBC - Pocket Bomberman - Stages (World 1) - Stage 1-4.png",
+  "credit": "Pocket Bomberman / Hudson Soft; supplied rip credited to Fret & Woppet",
+  "tile_size": 16,
+  "columns": 4,
+  "rows": 4,
+  "tiles": [
+    {
+      "id": 1,
+      "name": "background",
+      "source_rect": [
+        47,
+        29,
+        16,
+        16
+      ]
+    },
+    {
+      "id": 2,
+      "name": "grass_left",
+      "source_rect": [
+        239,
+        45,
+        16,
+        16
+      ]
+    },
+    {
+      "id": 3,
+      "name": "grass_middle",
+      "source_rect": [
+        255,
+        45,
+        16,
+        16
+      ]
+    },
+    {
+      "id": 4,
+      "name": "grass_right",
+      "source_rect": [
+        319,
+        45,
+        16,
+        16
+      ]
+    },
+    {
+      "id": 5,
+      "name": "column_body",
+      "source_rect": [
+        95,
+        93,
+        16,
+        16
+      ]
+    },
+    {
+      "id": 6,
+      "name": "floor",
+      "source_rect": [
+        31,
+        237,
+        16,
+        16
+      ]
+    },
+    {
+      "id": 7,
+      "name": "waterfall_top",
+      "source_rect": [
+        127,
+        29,
+        16,
+        16
+      ]
+    },
+    {
+      "id": 8,
+      "name": "waterfall_middle",
+      "source_rect": [
+        127,
+        45,
+        16,
+        16
+      ]
+    },
+    {
+      "id": 9,
+      "name": "waterfall_bottom",
+      "source_rect": [
+        127,
+        125,
+        16,
+        16
+      ]
+    },
+    {
+      "id": 10,
+      "name": "foliage",
+      "source_rect": [
+        31,
+        29,
+        16,
+        16
+      ]
+    },
+    {
+      "id": 11,
+      "name": "border_left",
+      "source_rect": [
+        15,
+        29,
+        16,
+        16
+      ]
+    },
+    {
+      "id": 12,
+      "name": "border_right",
+      "source_rect": [
+        511,
+        29,
+        16,
+        16
+      ]
+    },
+    {
+      "id": 13,
+      "name": "border_top",
+      "source_rect": [
+        31,
+        13,
+        16,
+        16
+      ]
+    },
+    {
+      "id": 14,
+      "name": "border_top_left",
+      "source_rect": [
+        15,
+        13,
+        16,
+        16
+      ]
+    },
+    {
+      "id": 15,
+      "name": "border_top_right",
+      "source_rect": [
+        511,
+        13,
+        16,
+        16
+      ]
+    },
+    {
+      "id": 16,
+      "name": "door_marker",
+      "source_rect": [
+        431,
+        77,
+        16,
+        16
+      ]
+    }
+  ]
+}
