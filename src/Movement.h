@@ -40,13 +40,27 @@ void moveAxis(Body& b, float distance, bool horizontal, int tileSize, Solid soli
         break;
     }
 }
-template<class Solid>
-void tick(Body& b, int direction, bool jumpPressed, float seconds, int tileSize, Solid solid) {
+inline bool crossesPlatform(const Body& b, float previousY, float platformX,
+        float platformY, float platformWidth) {
+    return b.vy >= 0.f && previousY + b.height <= platformY + 0.001f &&
+        b.y + b.height >= platformY && b.x < platformX + platformWidth &&
+        b.x + b.width > platformX;
+}
+template<class Solid, class Platforms>
+void tick(Body& b, int direction, bool jumpPressed, float seconds, int tileSize,
+        Solid solid, Platforms platforms) {
     b.vx = direction * 160.f;
     if (jumpPressed && b.grounded) { b.vy = -440.f; b.grounded = false; }
     b.vy = std::min(600.f, b.vy + 1100.f * seconds);
     moveAxis(b, b.vx * seconds, true, tileSize, solid);
+    const float previousY = b.y;
     b.grounded = false;
     moveAxis(b, b.vy * seconds, false, tileSize, solid);
+    if (!b.grounded && b.vy >= 0.f) platforms(b, previousY);
+}
+template<class Solid>
+void tick(Body& b, int direction, bool jumpPressed, float seconds, int tileSize, Solid solid) {
+    tick(b, direction, jumpPressed, seconds, tileSize, solid,
+        [](Body&, float) {});
 }
 }

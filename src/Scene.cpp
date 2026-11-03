@@ -6,38 +6,154 @@
 #include "Scene.h"
 #include "Game.h"
 
-
-Scene::Scene()
-{
-	map = NULL;
-	player = NULL;
+Scene::Scene() {
+    map = NULL;
+    player = NULL;
+    bombTexture = NULL;
+    bombSprite = NULL;
+    mediumBombSprite = NULL;
+    largeBombSprite = NULL;
+    explosionTexture = NULL;
+    for (int i = 0; i < BLAST_TYPE_COUNT; ++i) {
+        explosionSprites[i] = NULL;
+    }
 }
 
 Scene::~Scene() {}
+
 void Scene::shutdown() {
     delete player; player = NULL;
+    delete bombSprite; bombSprite = NULL;
+    delete mediumBombSprite; mediumBombSprite = NULL;
+    delete largeBombSprite; largeBombSprite = NULL;
+    delete bombTexture; bombTexture = NULL;
+
+    for (int i = 0; i < BLAST_TYPE_COUNT; ++i) {
+        delete explosionSprites[i];
+        explosionSprites[i] = NULL;
+    }
+
+    delete explosionTexture; explosionTexture = NULL;
     delete map; map = NULL;
+    bombs.clear();
     texProgram.free();
 }
-void Scene::resetPlayer() { player->setPosition(map->getSpawn()); }
 
-void Scene::init()
-{
-	initShaders();
-	map = TileMap::createTileMap("levels/level01.txt", glm::vec2(0, 0), texProgram);
-	player = new Player();
-	player->init(glm::ivec2(0, 0), texProgram);
-	resetPlayer();
-	player->setTileMap(map);
-	projection = glm::ortho(0.f, float(SCREEN_WIDTH), float(SCREEN_HEIGHT), 0.f);
-	currentTime = 0.0f;
+void Scene::resetPlayer() {
+    player->setPosition(map->getSpawn());
+    bombs.clear();
+}
+
+void Scene::init() {
+    initShaders();
+    map = TileMap::createTileMap("levels/level01.txt", glm::vec2(0, 0), texProgram);
+
+    // Textura y Sprites para los 3 estados de la Bomba
+    bombTexture = new Texture();
+    if (!bombTexture->loadFromFile("images/bomb.png", TEXTURE_PIXEL_FORMAT_RGBA))
+        throw std::runtime_error("Cannot load images/bomb.png");
+    bombTexture->setMinFilter(GL_NEAREST);
+    bombTexture->setMagFilter(GL_NEAREST);
+
+    const float tileSize = float(map->getTileSize());
+
+    // Estado 1: Normal
+    bombSprite = Sprite::createSprite(glm::vec2(tileSize, tileSize), glm::vec2(1.f, 1.f), bombTexture, &texProgram);
+    bombSprite->setNumberAnimations(1);
+    bombSprite->setAnimationSpeed(0, 1);
+    bombSprite->addKeyframe(0, glm::vec2(0.f, 0.f));
+    bombSprite->changeAnimation(0);
+
+    // Estado 2: Medio
+    mediumBombSprite = Sprite::createSprite(glm::vec2(tileSize * 1.125f, tileSize * 1.125f), glm::vec2(1.f, 1.f), bombTexture, &texProgram);
+    mediumBombSprite->setNumberAnimations(1);
+    mediumBombSprite->setAnimationSpeed(0, 1);
+    mediumBombSprite->addKeyframe(0, glm::vec2(0.f, 0.f));
+    mediumBombSprite->changeAnimation(0);
+
+    // Estado 3: Grande
+    largeBombSprite = Sprite::createSprite(glm::vec2(tileSize * 1.25f, tileSize * 1.25f), glm::vec2(1.f, 1.f), bombTexture, &texProgram);
+    largeBombSprite->setNumberAnimations(1);
+    largeBombSprite->setAnimationSpeed(0, 1);
+    largeBombSprite->addKeyframe(0, glm::vec2(0.f, 0.f));
+    largeBombSprite->changeAnimation(0);
+
+    // Atlas de Fuego (9x7 casillas)
+    explosionTexture = new Texture();
+    if (!explosionTexture->loadFromFile("images/fire-atlas.png", TEXTURE_PIXEL_FORMAT_RGBA))
+        throw std::runtime_error("Cannot load images/fire-atlas.png");
+    explosionTexture->setMinFilter(GL_NEAREST);
+    explosionTexture->setMagFilter(GL_NEAREST);
+
+    const glm::vec2 fireCellSize(1.f / 9.f, 1.f / 7.f);
+
+    // Mapeo corregido de columnas:
+    // Center(6), Top(0), Bottom(1), Left(2), Right(3), VertMid(4), HorizMid(5)
+    const int fireCols[BLAST_TYPE_COUNT] = { 6, 0, 1, 2, 3, 4, 5 };
+
+    for (int i = 0; i < BLAST_TYPE_COUNT; ++i) {
+        explosionSprites[i] = Sprite::createSprite(glm::vec2(tileSize, tileSize), fireCellSize, explosionTexture, &texProgram);
+        explosionSprites[i]->setNumberAnimations(1);
+        explosionSprites[i]->setAnimationSpeed(0, 10);
+
+        for (int frame = 1; frame <= 5; ++frame) {
+            explosionSprites[i]->addKeyframe(0, glm::vec2(fireCols[i] / 9.f, frame / 7.f));
+        }
+        explosionSprites[i]->changeAnimation(0);
+    }
+
+    player = new Player();
+    player->init(glm::ivec2(0, 0), texProgram);
+    resetPlayer();
+    player->setTileMap(map);
+
+    projection = glm::ortho(0.f, float(SCREEN_WIDTH), float(SCREEN_HEIGHT), 0.f);
+    currentTime = 0.0f;
     update(0);
 }
 
-void Scene::update(int deltaTime)
-{
-	currentTime += deltaTime;
-	player->update(deltaTime);
+void Scene::update(int deltaTime) {
+    currentTime += deltaTime;
+
+    for (Bomb& bomb : bombs)
+        if (bomb.update(deltaTime)) detonate(bomb);
+
+    bombs.erase(std::remove_if(bombs.begin(), bombs.end(),
+        [](const Bomb& bomb) { return bomb.isExpired(); }), bombs.end());
+
+    if (player->update(deltaTime, bombs)) {
+        const glm::vec2 pos = player->getPosition();
+        const int tileSize = map->getTileSize();
+        const int bombX = int(std::floor(pos.x / tileSize)) * tileSize;
+        const int bombY = int(std::floor(pos.y / tileSize)) * tileSize;
+
+        const bool alreadyPlaced = std::any_of(bombs.begin(), bombs.end(),
+            [bombX, bombY](const Bomb& bomb) {
+                return !bomb.isExploding() && bomb.getX() == bombX && bomb.getY() == bombY;
+            });
+
+        const std::size_t activeBombCount = std::count_if(bombs.begin(), bombs.end(),
+            [](const Bomb& bomb) { return !bomb.isExploding(); });
+
+        if (!alreadyPlaced && player->canPlaceBomb(activeBombCount)) {
+            if (activeBombCount == 0) {
+                for (int i = 0; i < BLAST_TYPE_COUNT; ++i) {
+                    explosionSprites[i]->changeAnimation(0);
+                }
+            }
+            bombs.emplace_back(bombX, bombY, tileSize, Bomb::DEFAULT_FUSE_MS, player->getFireRange());
+        }
+    }
+
+    const bool hasExplodingBomb = std::any_of(bombs.begin(), bombs.end(),
+        [](const Bomb& bomb) { return bomb.isExploding(); });
+
+    if (hasExplodingBomb) {
+        for (int i = 0; i < BLAST_TYPE_COUNT; ++i) {
+            explosionSprites[i]->update(deltaTime);
+        }
+    }
+
     const glm::vec2 pos = player->getPosition();
     const glm::ivec2 size = map->getPixelSize();
     float cx = std::max(0.f, std::min(pos.x + 16.f - SCREEN_WIDTH / 2.f, float(size.x - SCREEN_WIDTH)));
@@ -45,50 +161,132 @@ void Scene::update(int deltaTime)
     projection = glm::ortho(cx, cx + SCREEN_WIDTH, cy + SCREEN_HEIGHT, cy);
 }
 
-void Scene::render()
-{
-	glm::mat4 modelview;
+void Scene::detonate(Bomb& bomb) {
+    const int tileSize = map->getTileSize();
+    const int centerX = bomb.getX() / tileSize;
+    const int centerY = bomb.getY() / tileSize;
 
-	texProgram.use();
-	texProgram.setUniformMatrix4f("projection", projection);
-	texProgram.setUniform4f("color", 1.0f, 1.0f, 1.0f, 1.0f);
-	modelview = glm::mat4(1.0f);
-	texProgram.setUniformMatrix4f("modelview", modelview);
-	texProgram.setUniform2f("texCoordDispl", 0.f, 0.f);
-	map->render();
-	player->render();
+    std::vector<Bomb::BlastCell> blastCells;
+    std::vector<glm::ivec2> affectedCells;
+
+    blastCells.push_back({ centerX, centerY, BLAST_CENTER });
+    affectedCells.push_back(glm::ivec2(centerX, centerY));
+
+    const int directions[4][2] = {
+        { 1, 0 },  // Derecha
+        { -1, 0 }, // Izquierda
+        { 0, 1 },  // Abajo
+        { 0, -1 }  // Arriba
+    };
+
+    for (const auto& direction : directions) {
+        int dx = direction[0];
+        int dy = direction[1];
+
+        int maxSteps = 0;
+        for (int step = 1; step <= bomb.getFireRange(); ++step) {
+            int x = centerX + dx * step;
+            int y = centerY + dy * step;
+            if (map->isSolid(x, y)) break;
+            maxSteps = step;
+        }
+
+        for (int step = 1; step <= maxSteps; ++step) {
+            int x = centerX + dx * step;
+            int y = centerY + dy * step;
+
+            bool isEnd = (step == maxSteps);
+            int cellType = BLAST_CENTER;
+
+            if (dx > 0) {
+                cellType = isEnd ? BLAST_RIGHT_END : BLAST_HORIZONTAL_MID;
+            }
+            else if (dx < 0) {
+                cellType = isEnd ? BLAST_LEFT_END : BLAST_HORIZONTAL_MID;
+            }
+            else if (dy < 0) {
+                cellType = isEnd ? BLAST_TOP_END : BLAST_VERTICAL_MID;
+            }
+            else if (dy > 0) {
+                cellType = isEnd ? BLAST_BOTTOM_END : BLAST_VERTICAL_MID;
+            }
+
+            blastCells.push_back({ x, y, cellType });
+            affectedCells.push_back(glm::ivec2(x, y));
+        }
+    }
+
+    map->destroyFoliage(affectedCells);
+    bomb.setBlastCells(blastCells);
 }
 
-void Scene::initShaders()
-{
-	Shader vShader, fShader;
+void Scene::render() {
+    glm::mat4 modelview;
 
-	vShader.initFromFile(VERTEX_SHADER, "shaders/texture.vert");
-	if(!vShader.isCompiled())
-	{
-		cout << "Vertex Shader Error" << endl;
-		cout << "" << vShader.log() << endl << endl;
-	}
-	fShader.initFromFile(FRAGMENT_SHADER, "shaders/texture.frag");
-	if(!fShader.isCompiled())
-	{
-		cout << "Fragment Shader Error" << endl;
-		cout << "" << fShader.log() << endl << endl;
-	}
-	texProgram.init();
-	texProgram.addShader(vShader);
-	texProgram.addShader(fShader);
-	texProgram.bindFragmentOutput("outColor");
-	texProgram.link();
-	if(!texProgram.isLinked())
-	{
-		cout << "Shader Linking Error" << endl;
-		cout << "" << texProgram.log() << endl << endl;
-	}
-	if (!texProgram.isLinked()) throw std::runtime_error("Shader link failed");
-	vShader.free();
-	fShader.free();
+    texProgram.use();
+    texProgram.setUniformMatrix4f("projection", projection);
+    texProgram.setUniform4f("color", 1.0f, 1.0f, 1.0f, 1.0f);
+    modelview = glm::mat4(1.0f);
+    texProgram.setUniformMatrix4f("modelview", modelview);
+    texProgram.setUniform2f("texCoordDispl", 0.f, 0.f);
+    map->render();
+
+    for (const Bomb& bomb : bombs) {
+        if (bomb.isExploding()) {
+            for (const Bomb::BlastCell& cell : bomb.getBlastCells()) {
+                int type = cell.type;
+                if (type >= 0 && type < BLAST_TYPE_COUNT && explosionSprites[type] != NULL) {
+                    explosionSprites[type]->setPosition(glm::vec2(
+                        float(cell.x * map->getTileSize()),
+                        float(cell.y * map->getTileSize())
+                    ));
+                    explosionSprites[type]->render();
+                }
+            }
+        }
+        else {
+            const glm::vec2 bombPosition(float(bomb.getX()), float(bomb.getY()));
+            int ms = bomb.getRemainingMs();
+
+            if (ms <= 500) {
+                const float offset = map->getTileSize() * 0.125f;
+                largeBombSprite->setPosition(bombPosition - glm::vec2(offset, offset));
+                largeBombSprite->render();
+            }
+            else if (ms <= 1500) {
+                const float offset = map->getTileSize() * 0.0625f;
+                mediumBombSprite->setPosition(bombPosition - glm::vec2(offset, offset));
+                mediumBombSprite->render();
+            }
+            else {
+                bombSprite->setPosition(bombPosition);
+                bombSprite->render();
+            }
+        }
+    }
+    player->render();
 }
 
+void Scene::initShaders() {
+    Shader vShader, fShader;
 
-
+    vShader.initFromFile(VERTEX_SHADER, "shaders/texture.vert");
+    if (!vShader.isCompiled()) {
+        std::cout << "Vertex Shader Error\n" << vShader.log() << std::endl;
+    }
+    fShader.initFromFile(FRAGMENT_SHADER, "shaders/texture.frag");
+    if (!fShader.isCompiled()) {
+        std::cout << "Fragment Shader Error\n" << fShader.log() << std::endl;
+    }
+    texProgram.init();
+    texProgram.addShader(vShader);
+    texProgram.addShader(fShader);
+    texProgram.bindFragmentOutput("outColor");
+    texProgram.link();
+    if (!texProgram.isLinked()) {
+        std::cout << "Shader Linking Error\n" << texProgram.log() << std::endl;
+        throw std::runtime_error("Shader link failed");
+    }
+    vShader.free();
+    fShader.free();
+}

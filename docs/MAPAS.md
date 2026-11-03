@@ -41,12 +41,16 @@ COLLISION
 ```
 
 Las dimensiones del mapa y del atlas van en columnas/filas. SPAWN es la celda inicial
-de la esquina superior izquierda del jugador. IDs gráficos: 0 vacío; 1 a 16 según
+IDs gráficos: 0 vacío; 1 a 16 según
 el catálogo, por filas del atlas. COLLISION decide qué bloquea al jugador de forma
 independiente del aspecto: 1 sólido, 0 atravesable. El exterior del mapa es sólido.
+El follaje decorativo (tile 10) puede desaparecer al recibir una explosión; esto no
+cambia la colisión del nivel. Si estaba en BACKGROUND se restaura el tile base 1; si
+estaba en FOREGROUND se deja vacío, mostrando el fondo de la capa inferior.
 
 El cargador valida dimensiones, filas, IDs y que el punto de aparición esté libre.
-Dibuja BACKGROUND antes de FOREGROUND. No hay aún tiles destructibles ni importación de Tiled.
+Dibuja BACKGROUND antes de FOREGROUND. Las explosiones pueden eliminar el tile 10 de follaje;
+los bloques sólidos aún no son destructibles. No hay importación de Tiled.
 
 Para modificar el diseño a mano, edita las capas en `src/levels/level01.txt` y compila.
 Para regenerar el diseño base y el atlas con Python + Pillow:
@@ -69,4 +73,4 @@ La prueba incluye caminar fuera de una plataforma y caer, y comprueba rutas de v
 al inicio para todas las posiciones alcanzadas en el muestreo (cada cuatro píxeles). También se han
 comparado los 16 recortes píxel a píxel con su región de la imagen original.
 
-Controles: flechas o A/D, espacio/arriba/W para saltar, R para volver al inicio.
+Controles: flechas izquierda/derecha o A/D para moverse; espacio coloca una bomba; arriba/W salta; R vuelve al inicio.

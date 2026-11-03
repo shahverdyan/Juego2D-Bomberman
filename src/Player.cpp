@@ -61,21 +61,41 @@ void Player::init(const glm::ivec2 &tileMapPos, ShaderProgram &shaderProgram)
 	
 }
 
-void Player::update(int deltaTime)
+bool Player::update(int deltaTime, const std::vector<Bomb>& bombs)
 {
     auto& game = Game::instance();
     int direction = int(game.getKey(GLFW_KEY_RIGHT) || game.getKey(GLFW_KEY_D))
                   - int(game.getKey(GLFW_KEY_LEFT) || game.getKey(GLFW_KEY_A));
-    bool jump = game.consumeKey(GLFW_KEY_SPACE);
-    jump = game.consumeKey(GLFW_KEY_UP) || jump;
+    const bool placeBomb = game.consumeKey(GLFW_KEY_SPACE);
+    bool jump = game.consumeKey(GLFW_KEY_UP);
     jump = game.consumeKey(GLFW_KEY_W) || jump;
     movement::tick(body, direction, jump, deltaTime / 1000.f, map->getTileSize(),
-        [this](int x, int y) { return map->isSolid(x, y); });
+        [this](int x, int y) { return map->isSolid(x, y); },
+        [&bombs](movement::Body& playerBody, float previousY) {
+            bool foundPlatform = false;
+            float landingY = 0.f;
+            for (const Bomb& bomb : bombs) {
+                if (bomb.isExploding()) continue;
+                const float platformY = float(bomb.getY());
+                if (movement::crossesPlatform(playerBody, previousY,
+                        float(bomb.getX()), platformY, float(bomb.getTileSize())) &&
+                    (!foundPlatform || platformY < landingY)) {
+                    landingY = platformY;
+                    foundPlatform = true;
+                }
+            }
+            if (foundPlatform) {
+                playerBody.y = landingY - playerBody.height;
+                playerBody.vy = 0.f;
+                playerBody.grounded = true;
+            }
+        });
     if (direction != 0) facingLeft = direction < 0;
     int anim = direction ? (facingLeft ? MOVE_LEFT : MOVE_RIGHT) : (facingLeft ? STAND_LEFT : STAND_RIGHT);
     if (sprite->animation() != anim) sprite->changeAnimation(anim);
     sprite->update(deltaTime);
     sprite->setPosition(glm::vec2(body.x, body.y));
+    return placeBomb;
 }
 
 void Player::render()

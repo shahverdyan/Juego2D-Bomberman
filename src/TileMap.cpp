@@ -20,7 +20,7 @@ TileMap *TileMap::createTileMap(const string &levelFile, const glm::vec2 &minCoo
 
 
 TileMap::TileMap(const string &levelFile, const glm::vec2 &minCoords, ShaderProgram &program)
- : vao(0), vbo(0), nTiles(0)
+ : vao(0), vbo(0), nTiles(0), mapOrigin(minCoords), shaderProgram(&program)
 {
 	if (!loadLevel(levelFile)) throw std::runtime_error("Invalid level: " + levelFile);
 	prepareArrays(minCoords, program);
@@ -64,6 +64,26 @@ bool TileMap::loadLevel(const string &levelFile)
 
 bool TileMap::isSolid(int x, int y) const { return level.solid(x, y); }
 
+bool TileMap::destroyFoliage(const std::vector<glm::ivec2>& cells)
+{
+    bool destroyed = false;
+    for (const glm::ivec2& cell : cells) {
+        if (cell.x < 0 || cell.y < 0 || cell.x >= level.width || cell.y >= level.height)
+            continue;
+        const size_t index = size_t(cell.y) * level.width + cell.x;
+        if (level.background[index] == 10) {
+            level.background[index] = 1;
+            destroyed = true;
+        }
+        if (level.foreground[index] == 10) {
+            level.foreground[index] = 0;
+            destroyed = true;
+        }
+    }
+    if (destroyed) prepareArrays(mapOrigin, *shaderProgram);
+    return destroyed;
+}
+
 void TileMap::prepareArrays(const glm::vec2 &minCoords, ShaderProgram &program)
 {
     vector<float> vertices;
@@ -93,11 +113,11 @@ void TileMap::prepareArrays(const glm::vec2 &minCoords, ShaderProgram &program)
             }
         }
     }
-    glGenVertexArrays(1, &vao);
+    if (vao == 0) glGenVertexArrays(1, &vao);
     glBindVertexArray(vao);
-    glGenBuffers(1, &vbo);
+    if (vbo == 0) glGenBuffers(1, &vbo);
     glBindBuffer(GL_ARRAY_BUFFER, vbo);
-    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.empty() ? nullptr : vertices.data(), GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.empty() ? nullptr : vertices.data(), GL_DYNAMIC_DRAW);
     posLocation = program.bindVertexAttribute("position", 2, 4*sizeof(float), 0);
     texCoordLocation = program.bindVertexAttribute("texCoord", 2, 4*sizeof(float), (void *)(2*sizeof(float)));
 }

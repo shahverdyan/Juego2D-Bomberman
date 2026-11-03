@@ -1,4 +1,4 @@
-# Estado (2 noviembre 2026)
+# Estado (3 noviembre 2026)
 
 ## Preparación
 
@@ -32,14 +32,30 @@ primer plano y colisiones y define el spawn. El script tools/build_world1.py
 reproduce la extracción sin modificar la fuente y genera el diseño inicial.
 Las cascadas y el marcador de puerta son decorativos, todavía sin animación ni lógica.
 
+## Fase 2: lógica inicial de bombas (3 noviembre)
+
+- Espacio coloca una bomba alineada a la celda del jugador; ↑/W conservan el salto.
+- La bomba no tiene gravedad; su mecha dura 3 s. Tres fotogramas de fuego avanzan lentamente durante la mecha; en los últimos 0.5 s la bomba aumenta de tamaño y el fuego se detiene al detonar. La cruz permanece 0.5 s y luego desaparece.
+- El alcance inicial es 1 celda en cruz, se detiene ante terreno sólido y destruye el follaje decorativo (tile 10); no modifica la colisión.
+- El jugador puede atravesar la bomba desde abajo/lateralmente y aterrizar sobre ella para saltar.
+- La bomba usa su sprite propio con el fuego animado encima mientras espera; la cruz de la explosión usa el mismo fotograma congelado al detonar. Se usan solo tres fotogramas consecutivos del atlas. La bomba se dibuja un 25% más grande durante los últimos 0.5 s. El atlas extraído del spritesheet original conserva la transparencia.
+- El análisis del spritesheet confirma que la región de fuego ocupa una cuadrícula 9x7 de 16x16 píxeles, con la animación horizontal avanzando a derecha y la secuencia de 4 fotogramas tomando las columnas 0..3 de la fila superior. El centro, los extremos y los segmentos intermedios de la cruz se pueden derivar de esa misma matriz para ampliarla con piezas específicas en futuras iteraciones.
+- Al destruir follaje de BACKGROUND se restaura el tile base 1; en FOREGROUND se deja vacío. La colisión no cambia.
+- La capacidad (inicia en 1) y el alcance (inicia en 1 tile) son atributos independientes, ampliables mediante futuros power-ups.
+- No se permite más de una bomba en la misma celda. R reinicia al jugador y limpia bombas activas.
+- Pendiente: daño al jugador/enemigos, bloques destructibles y recoger power-ups (fase 2).
+
 ## Verificación realizada
 
-- Debug y Release compilan correctamente con MSBuild de VS 18.
-- Ambas versiones arrancan en modo oculto `--smoke-test`, renderizan y terminan con código 0.
-- Captura real de Debug revisada: mapa y sprite visibles.
+- Ajustado el ciclo de animación: tres fotogramas a 1 fps, una sola actualización por ciclo, y ampliación de la bomba en los últimos 0.5 s de mecha; al detonar se detiene el fuego.
+- La prueba de bomba cubre mecha, fase de explosión, alcance configurable y aterrizaje/salto sobre la plataforma.
+- Los recortes de bomba/explosión usan transparencia para el fondo de color clave.
+- Debug y Release compilan correctamente con MSBuild de VS 18 tras corregir el recorte de fuego y la restauración del fondo.
+- Ambas versiones arrancan en modo oculto `--smoke-test`, cargan recursos, renderizan y terminan con código 0.
+- Captura real de Debug anterior a esta iteración: mapa y personaje provisional visibles.
 - Tests C++ de suelo, salto, paredes, techo, caída rápida, plataformas, salida de borde y timing fijo: PASS.
 - La prueba de salida de plataforma necesitó 1.6 s para dar tiempo a aterrizar; 1 s era insuficiente.
-- Pendiente prueba manual del usuario de controles/cámara y adaptación al atlas definitivo.
+- Pendiente prueba manual del usuario: controles, alcance de explosión, bloqueo por terreno, destrucción de follaje y aspecto de sprites.
 - SOIL.lib antiguo produce avisos de PDB ausentes y Edit-and-Continue en Release. No impiden compilar ni ejecutar.
 - El sandbox bloqueó el servicio de símbolos (LNK1101 MSPDB140.DLL); la compilación fuera de él pasó.
 
@@ -69,10 +85,10 @@ Las cascadas y el marcador de puerta son decorativos, todavía sin animación ni
 
 ## Próximo paso
 
-Probar manualmente la distribución del nivel y ajustar según preferencias del usuario.
-Sustituir el personaje provisional cuando se disponga de su spritesheet.
-Después avanzar a bombas (fase 2). El mapa todavía no tiene enemigos ni condiciones
-para abrir la puerta, y no constituye por sí solo un nivel completo del enunciado.
+Probar manualmente el alcance de la explosión, el bloqueo por terreno y la destrucción visual del follaje.
+Añadir daño, bloques destructibles y recogida de power-ups.
+Sustituir el personaje provisional cuando se disponga de su spritesheet. El mapa todavía
+no tiene enemigos ni condiciones para abrir la puerta, y no constituye por sí solo un nivel completo del enunciado.
 
 ## Trabajo entre chats
 

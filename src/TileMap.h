@@ -3,6 +3,7 @@
 
 
 #include <glm/glm.hpp>
+#include <vector>
 #include "Texture.h"
 #include "LevelData.h"
 #include "ShaderProgram.h"
@@ -31,7 +32,8 @@ public:
 	
 	int getTileSize() const { return level.tileSize; }
 
-    bool isSolid(int x, int y) const;
+	bool isSolid(int x, int y) const;
+	bool destroyFoliage(const std::vector<glm::ivec2>& cells);
     glm::vec2 getSpawn() const { return glm::vec2(level.spawnX * level.tileSize, level.spawnY * level.tileSize); }
     glm::ivec2 getPixelSize() const { return glm::ivec2(level.width, level.height) * level.tileSize; }
 
@@ -44,7 +46,9 @@ private:
 	GLuint vbo;
 	GLint posLocation, texCoordLocation;
 	int nTiles;
-    LevelData level;
+	glm::vec2 mapOrigin;
+	ShaderProgram* shaderProgram;
+	LevelData level;
     Texture tilesheet;
 
 };
