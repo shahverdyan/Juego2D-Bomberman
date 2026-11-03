@@ -9,15 +9,11 @@ enum ShooterAnims {
     WALK_LEFT, WALK_RIGHT, ALERT_LEFT, ALERT_RIGHT, SHOOT_LEFT, SHOOT_RIGHT
 };
 
-Shooter::Shooter(const glm::vec2& position, bool facingLeft) : facingLeft(facingLeft) {
-    body.x = position.x;
-    body.y = position.y;
-    body.width = WIDTH;
-    body.height = HEIGHT;
-}
+Shooter::Shooter(const glm::vec2& position, bool facingLeft)
+    : Enemy(position, WIDTH, HEIGHT, facingLeft) {}
 
+// El sprite del cuerpo lo libera Enemy; aquí solo el de la bala.
 Shooter::~Shooter() {
-    delete sprite;
     delete bulletSprite;
 }
 
@@ -66,9 +62,7 @@ void Shooter::update(int deltaTime, const movement::Body& player) {
         patrol(seconds);
     }
 
-    // Gravedad y colisión vertical con la misma física que el jugador (sin salto).
-    movement::tick(body, 0, false, seconds, map->getTileSize(),
-        [this](int x, int y) { return map->isSolid(x, y); });
+    applyGravity(seconds);
 
     fireAnimMs = std::max(0, fireAnimMs - deltaTime);
     updateBullets(seconds);
@@ -77,9 +71,7 @@ void Shooter::update(int deltaTime, const movement::Body& player) {
     int anim = WALK_LEFT + side;
     if (fireAnimMs > 0) anim = SHOOT_LEFT + side;
     else if (seesPlayer) anim = ALERT_LEFT + side;
-    if (sprite->animation() != anim) sprite->changeAnimation(anim);
-    sprite->update(deltaTime);
-    sprite->setPosition(glm::vec2(body.x, body.y));
+    updateSprite(deltaTime, anim);
 }
 
 // Ve al jugador si: (1) la línea de la bala cruza su cuerpo, (2) está delante
@@ -105,24 +97,10 @@ bool Shooter::canSee(const movement::Body& player) const {
     return true;
 }
 
-// ¿Hay suelo justo delante de los pies? Evita caerse de la plataforma.
-bool Shooter::floorAhead() const {
-    const int tileSize = map->getTileSize();
-    const float frontX = facingLeft ? body.x - 1.f : body.x + body.width;
-    const int tileX = int(std::floor(frontX / tileSize));
-    const int tileY = int(std::floor((body.y + body.height) / tileSize));
-    return map->isSolid(tileX, tileY);
-}
-
 // Camina hacia donde mira y se da la vuelta al llegar a un borde o a una pared.
 void Shooter::patrol(float seconds) {
     if (body.grounded && !floorAhead()) facingLeft = !facingLeft;
-
-    const float step = (facingLeft ? -WALK_SPEED : WALK_SPEED) * seconds;
-    const float before = body.x;
-    movement::moveAxis(body, step, true, map->getTileSize(),
-        [this](int x, int y) { return map->isSolid(x, y); });
-    if (std::abs(body.x - before) < std::abs(step) - 0.001f) facingLeft = !facingLeft;
+    if (walk(WALK_SPEED, seconds)) facingLeft = !facingLeft;
 }
 
 // La bala sale desde la boca, justo delante del cuerpo.
@@ -159,7 +137,7 @@ bool Shooter::hitsPlayer(const movement::Body& player) {
 }
 
 void Shooter::render() {
-    sprite->render();
+    Enemy::render();
     for (const Bullet& bullet : bullets) {
         bulletSprite->setPosition(glm::vec2(bullet.x, bullet.y));
         bulletSprite->render();

@@ -1,13 +1,11 @@
 #pragma once
 #include <vector>
-#include "Sprite.h"
-#include "TileMap.h"
-#include "Movement.h"
+#include "Enemy.h"
 
 // Enemigo "Shooter": patrulla a izquierda/derecha sobre su plataforma y,
 // cuando ve al jugador delante en su misma fila, se para y le dispara balas
 // horizontales. La Scene decide qué pasa cuando una bala toca al jugador.
-class Shooter {
+class Shooter : public Enemy {
 public:
     struct Bullet { float x, y, vx; };
 
@@ -23,35 +21,26 @@ public:
 
     // position: esquina superior izquierda del cuerpo de 32x48.
     Shooter(const glm::vec2& position, bool facingLeft);
-    ~Shooter();
-    Shooter(const Shooter&) = delete;
-    Shooter& operator=(const Shooter&) = delete;
+    ~Shooter() override;
 
     // Las texturas pertenecen a la Scene y se comparten entre shooters.
     void init(Texture* spritesheet, Texture* bulletTexture, ShaderProgram& program);
-    void setTileMap(TileMap* tileMap) { map = tileMap; }
-    void update(int deltaTime, const movement::Body& player);
-    void render();
+    void update(int deltaTime, const movement::Body& player) override;
+    void render() override;
 
     // Devuelve true si alguna bala toca al jugador; esa bala desaparece.
-    bool hitsPlayer(const movement::Body& player);
-    void clearBullets() { bullets.clear(); }
-    const movement::Body& getBody() const { return body; }
+    bool hitsPlayer(const movement::Body& player) override;
+    void clearProjectiles() override { bullets.clear(); }
 
 private:
     bool canSee(const movement::Body& player) const;
-    bool floorAhead() const;
     void patrol(float seconds);
     void fire();
     void updateBullets(float seconds);
 
-    movement::Body body;
-    bool facingLeft;
     bool seesPlayer = false;
     int shootTimerMs = REACTION_MS;
     int fireAnimMs = 0;
     std::vector<Bullet> bullets;
-    Sprite* sprite = nullptr;
     Sprite* bulletSprite = nullptr;
-    TileMap* map = nullptr;
 };

@@ -64,6 +64,14 @@ bool TileMap::loadLevel(const string &levelFile)
 
 bool TileMap::isSolid(int x, int y) const { return level.solid(x, y); }
 
+// Arbusto (tile 10) en el fondo o en el primer plano.
+bool TileMap::isFoliage(int x, int y) const
+{
+    if (x < 0 || y < 0 || x >= level.width || y >= level.height) return false;
+    const size_t index = size_t(y) * level.width + x;
+    return level.background[index] == 10 || level.foreground[index] == 10;
+}
+
 bool TileMap::destroyFoliage(const std::vector<glm::ivec2>& cells)
 {
     bool destroyed = false;

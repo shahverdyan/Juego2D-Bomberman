@@ -11,6 +11,7 @@ struct HudInfo {
     int fireRange;
     int bombCapacity;
     bool invulnerable;  // modo G
+    int starSeconds;    // segundos de estrella restantes (0 = sin estrella)
 };
 
 // Franja superior de la pantalla con el estado de la partida.

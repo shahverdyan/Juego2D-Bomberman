@@ -11,7 +11,9 @@
 #include "Player.h"
 #include "Bomb.h"
 #include "Shooter.h"
+#include "Walker.h"
 #include "Hud.h"
+#include "Item.h"
 
 enum BlastType {
     BLAST_CENTER = 0,      // Columna 6 (Cruz central)
@@ -42,9 +44,11 @@ public:
 private:
     void initShaders();
     void detonate(Bomb& bomb);
-    void spawnShooters();
+    void spawnEnemies();
+    void spawnItems();
+    void pickUpItems();
     bool touchesFire(const movement::Body& body) const;
-    void killShootersInBlast();
+    void killEnemiesInBlast();
     void damagePlayer();
     void restartLevel();
 
@@ -62,10 +66,17 @@ private:
 
     std::vector<Bomb> bombs;
 
-    // Enemigos shooter: texturas compartidas por todos ellos.
+    // Enemigos de todos los tipos (Shooter, Walker...) tratados como Enemy*.
+    // Las texturas se comparten entre todos los enemigos del mismo tipo.
+    std::vector<Enemy*> enemies;
     Texture* shooterTexture;
     Texture* shooterBulletTexture;
-    std::vector<Shooter*> shooters;
+    Texture* walkerTexture;
+
+    // Objetos escondidos en arbustos (Fire Up, Bomb Up, corazón, estrella).
+    std::vector<Item> items;
+    Texture* itemTexture;
+    Sprite* itemSprite;  // una animación por tipo de objeto
 
     Hud* hud;
     int level;

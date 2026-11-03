@@ -66,6 +66,7 @@ void Player::init(const glm::ivec2 &tileMapPos, ShaderProgram &shaderProgram)
 bool Player::update(int deltaTime, const std::vector<Bomb>& bombs)
 {
     invulnerableMs = std::max(0, invulnerableMs - deltaTime);
+    starMs = std::max(0, starMs - deltaTime);
     auto& game = Game::instance();
     int direction = int(game.getKey(GLFW_KEY_RIGHT) || game.getKey(GLFW_KEY_D))
                   - int(game.getKey(GLFW_KEY_LEFT) || game.getKey(GLFW_KEY_A));
@@ -114,6 +115,7 @@ void Player::resetStats()
 {
 	lives = MAX_LIVES;
 	invulnerableMs = 0;
+	starMs = 0;
 	bombCapacity = 1;
 	fireRange = Bomb::DEFAULT_FIRE_RANGE;
 }

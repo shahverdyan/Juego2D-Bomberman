@@ -26,14 +26,21 @@ public:
     static const int MAX_LIVES = 3;
     static const int HURT_INVULNERABLE_MS = 2000;
     int getLives() const { return lives; }
-    bool canBeHurt() const { return invulnerableMs == 0; }
+    bool canBeHurt() const { return invulnerableMs == 0 && starMs == 0; }
     void loseLife() { --lives; invulnerableMs = HURT_INVULNERABLE_MS; }
+    void gainLife() { if (lives < MAX_LIVES) ++lives; }
+
+    // Objeto estrella: invulnerable durante STAR_MS (sin parpadeo).
+    static const int STAR_MS = 10000;
+    void startStar() { starMs = STAR_MS; }
+    int getStarMs() const { return starMs; }
     // Vuelve a los valores iniciales (al reiniciar el nivel tras perder todas las vidas).
     void resetStats();
 private:
     movement::Body body;
     int lives = MAX_LIVES;
     int invulnerableMs = 0;
+    int starMs = 0;
     bool facingLeft = false;
     std::size_t bombCapacity = 1;
     int fireRange = Bomb::DEFAULT_FIRE_RANGE;

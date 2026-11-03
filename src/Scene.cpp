@@ -19,6 +19,9 @@ Scene::Scene() {
     }
     shooterTexture = NULL;
     shooterBulletTexture = NULL;
+    walkerTexture = NULL;
+    itemTexture = NULL;
+    itemSprite = NULL;
     hud = NULL;
     level = 1;
     timeLeftMs = LEVEL_TIME_SECONDS * 1000;
@@ -41,10 +44,15 @@ void Scene::shutdown() {
 
     delete explosionTexture; explosionTexture = NULL;
 
-    for (Shooter* shooter : shooters) delete shooter;
-    shooters.clear();
+    for (Enemy* enemy : enemies) delete enemy;
+    enemies.clear();
     delete shooterTexture; shooterTexture = NULL;
     delete shooterBulletTexture; shooterBulletTexture = NULL;
+    delete walkerTexture; walkerTexture = NULL;
+
+    delete itemSprite; itemSprite = NULL;
+    delete itemTexture; itemTexture = NULL;
+    items.clear();
 
     delete hud; hud = NULL;
     delete map; map = NULL;
@@ -55,7 +63,7 @@ void Scene::shutdown() {
 void Scene::resetPlayer() {
     player->setPosition(map->getSpawn());
     bombs.clear();
-    for (Shooter* shooter : shooters) shooter->clearBullets();
+    for (Enemy* enemy : enemies) enemy->clearProjectiles();
 }
 
 void Scene::init() {
@@ -116,7 +124,7 @@ void Scene::init() {
         explosionSprites[i]->changeAnimation(0);
     }
 
-    // Enemigos shooter (provisional: posiciones fijas hasta que el nivel las defina).
+    // Texturas de enemigos.
     shooterTexture = new Texture();
     if (!shooterTexture->loadFromFile("images/shooter-atlas.png", TEXTURE_PIXEL_FORMAT_RGBA))
         throw std::runtime_error("Cannot load images/shooter-atlas.png");
@@ -127,8 +135,29 @@ void Scene::init() {
         throw std::runtime_error("Cannot load images/shooter-bullet.png");
     shooterBulletTexture->setMinFilter(GL_NEAREST);
     shooterBulletTexture->setMagFilter(GL_NEAREST);
+    // Sprite provisional del walker: el antiguo personaje Bubble.
+    walkerTexture = new Texture();
+    if (!walkerTexture->loadFromFile("images/bub.png", TEXTURE_PIXEL_FORMAT_RGBA))
+        throw std::runtime_error("Cannot load images/bub.png");
+    walkerTexture->setMinFilter(GL_NEAREST);
+    walkerTexture->setMagFilter(GL_NEAREST);
 
-    spawnShooters();
+    spawnEnemies();
+
+    // Objetos: atlas de 4 celdas de 32x32 en el orden de ItemType.
+    itemTexture = new Texture();
+    if (!itemTexture->loadFromFile("images/items-atlas.png", TEXTURE_PIXEL_FORMAT_RGBA))
+        throw std::runtime_error("Cannot load images/items-atlas.png");
+    itemTexture->setMinFilter(GL_NEAREST);
+    itemTexture->setMagFilter(GL_NEAREST);
+    itemSprite = Sprite::createSprite(glm::vec2(tileSize, tileSize),
+        glm::vec2(1.f / ITEM_TYPE_COUNT, 1.f), itemTexture, &texProgram);
+    itemSprite->setNumberAnimations(ITEM_TYPE_COUNT);
+    for (int type = 0; type < ITEM_TYPE_COUNT; ++type) {
+        itemSprite->setAnimationSpeed(type, 1);
+        itemSprite->addKeyframe(type, glm::vec2(float(type) / ITEM_TYPE_COUNT, 0.f));
+    }
+    spawnItems();
 
     hud = new Hud();
     hud->init(texProgram);
@@ -143,20 +172,64 @@ void Scene::init() {
     update(0);
 }
 
-// Crea los shooters del nivel (provisional: posiciones fijas hasta que el nivel las defina).
-void Scene::spawnShooters() {
+// Crea los enemigos del nivel (provisional: posiciones fijas hasta que el nivel las defina).
+// Cada spawn: {columna, fila del suelo, mira a la izquierda}.
+void Scene::spawnEnemies() {
+    struct Spawn { int tileX, floorRow; bool facingLeft; };
     const float tileSize = float(map->getTileSize());
-    // {columna, fila del suelo, mira a la izquierda}: pasillo inferior y repisa superior.
-    const struct { int tileX, floorRow; bool facingLeft; } shooterSpawns[] = {
-        { 14, 25, false },
-        { 24, 10, true },
-    };
-    for (const auto& spawn : shooterSpawns) {
+
+    // Shooters: pasillo inferior y repisa superior.
+    const Spawn shooterSpawns[] = { { 14, 25, false }, { 24, 10, true } };
+    for (const Spawn& spawn : shooterSpawns) {
         const glm::vec2 position(spawn.tileX * tileSize, spawn.floorRow * tileSize - Shooter::HEIGHT);
         Shooter* shooter = new Shooter(position, spawn.facingLeft);
         shooter->init(shooterTexture, shooterBulletTexture, texProgram);
-        shooter->setTileMap(map);
-        shooters.push_back(shooter);
+        enemies.push_back(shooter);
+    }
+
+    // Walkers: suelo derecho y plataforma central (de esta se cae por el borde).
+    const Spawn walkerSpawns[] = { { 42, 25, true }, { 16, 17, false } };
+    for (const Spawn& spawn : walkerSpawns) {
+        const glm::vec2 position(spawn.tileX * tileSize, spawn.floorRow * tileSize - Walker::HEIGHT);
+        Walker* walker = new Walker(position, spawn.facingLeft);
+        walker->init(walkerTexture, texProgram);
+        enemies.push_back(walker);
+    }
+
+    for (Enemy* enemy : enemies) enemy->setTileMap(map);
+}
+
+// Objetos escondidos en arbustos del nivel 1 (provisional: posiciones fijas).
+// Cada uno: {columna, fila, tipo, revelado}. La celda debe ser un arbusto.
+void Scene::spawnItems() {
+    items = {
+        { 3, 24, ITEM_FIRE_UP, false },  // junto al inicio
+        { 4, 22, ITEM_BOMB_UP, false },
+        { 11, 20, ITEM_HEART, false },
+        { 15, 16, ITEM_STAR, false },
+    };
+}
+
+// Al tocar un objeto visible, el jugador lo recoge y se aplica su efecto.
+void Scene::pickUpItems() {
+    const movement::Body& body = player->getBody();
+    const float tileSize = float(map->getTileSize());
+    for (auto it = items.begin(); it != items.end();) {
+        const float x = it->tileX * tileSize, y = it->tileY * tileSize;
+        const bool touching = it->revealed && body.x < x + tileSize && body.x + body.width > x &&
+            body.y < y + tileSize && body.y + body.height > y;
+        if (!touching) {
+            ++it;
+            continue;
+        }
+        switch (it->type) {
+        case ITEM_FIRE_UP: player->increaseFireRange(); break;
+        case ITEM_BOMB_UP: player->increaseBombCapacity(); break;
+        case ITEM_HEART:   player->gainLife(); break;
+        case ITEM_STAR:    player->startStar(); break;
+        default: break;
+        }
+        it = items.erase(it);
     }
 }
 
@@ -171,13 +244,14 @@ void Scene::damagePlayer() {
 // Provisional hasta tener menú: al perder las 3 vidas se recarga el nivel
 // (mapa, enemigos, tiempo) y el jugador vuelve a sus valores iniciales.
 void Scene::restartLevel() {
-    for (Shooter* shooter : shooters) delete shooter;
-    shooters.clear();
+    for (Enemy* enemy : enemies) delete enemy;
+    enemies.clear();
     delete map;
     map = TileMap::createTileMap("levels/level01.txt", glm::vec2(0, 0), texProgram);
     player->setTileMap(map);
     player->resetStats();
-    spawnShooters();
+    spawnEnemies();
+    spawnItems();
     resetPlayer();
     timeLeftMs = LEVEL_TIME_SECONDS * 1000;
 }
@@ -215,20 +289,17 @@ void Scene::update(int deltaTime) {
         }
     }
 
-    killShootersInBlast();
+    killEnemiesInBlast();
+    pickUpItems();
 
     // Daño al jugador: bala, contacto con un enemigo o fuego de una explosión.
     // Primero se recoge si hay daño y después se aplica, porque damagePlayer()
-    // puede reiniciar el nivel y borrar los shooters.
+    // puede reiniciar el nivel y borrar los enemigos.
     const movement::Body& playerBody = player->getBody();
     bool playerHurt = false;
-    for (Shooter* shooter : shooters) {
-        shooter->update(deltaTime, playerBody);
-        if (shooter->hitsPlayer(playerBody)) playerHurt = true;
-        const movement::Body& enemy = shooter->getBody();
-        if (playerBody.x < enemy.x + enemy.width && playerBody.x + playerBody.width > enemy.x &&
-            playerBody.y < enemy.y + enemy.height && playerBody.y + playerBody.height > enemy.y)
-            playerHurt = true;
+    for (Enemy* enemy : enemies) {
+        enemy->update(deltaTime, playerBody);
+        if (enemy->hitsPlayer(playerBody) || enemy->touches(playerBody)) playerHurt = true;
     }
     if (touchesFire(playerBody)) playerHurt = true;
     if (playerHurt) damagePlayer();
@@ -315,6 +386,12 @@ void Scene::detonate(Bomb& bomb) {
         }
     }
 
+    // Los objetos escondidos en arbustos alcanzados por el fuego se hacen visibles.
+    for (Item& item : items) {
+        if (item.revealed || !map->isFoliage(item.tileX, item.tileY)) continue;
+        for (const glm::ivec2& cell : affectedCells)
+            if (cell.x == item.tileX && cell.y == item.tileY) item.revealed = true;
+    }
     map->destroyFoliage(affectedCells);
     bomb.setBlastCells(blastCells);
 }
@@ -334,12 +411,12 @@ bool Scene::touchesFire(const movement::Body& body) const {
     return false;
 }
 
-// Cualquier shooter que toque el fuego muere: se borra junto con sus balas.
-void Scene::killShootersInBlast() {
-    for (auto it = shooters.begin(); it != shooters.end();) {
+// Cualquier enemigo que toque el fuego muere: se borra (con sus balas, si tiene).
+void Scene::killEnemiesInBlast() {
+    for (auto it = enemies.begin(); it != enemies.end();) {
         if (touchesFire((*it)->getBody())) {
             delete *it;
-            it = shooters.erase(it);
+            it = enemies.erase(it);
         } else {
             ++it;
         }
@@ -356,6 +433,14 @@ void Scene::render() {
     texProgram.setUniformMatrix4f("modelview", modelview);
     texProgram.setUniform2f("texCoordDispl", 0.f, 0.f);
     map->render();
+
+    for (const Item& item : items) {
+        if (!item.revealed) continue;
+        itemSprite->changeAnimation(item.type);
+        itemSprite->setPosition(glm::vec2(float(item.tileX * map->getTileSize()),
+            float(item.tileY * map->getTileSize())));
+        itemSprite->render();
+    }
 
     for (const Bomb& bomb : bombs) {
         if (bomb.isExploding()) {
@@ -390,7 +475,7 @@ void Scene::render() {
             }
         }
     }
-    for (Shooter* shooter : shooters) shooter->render();
+    for (Enemy* enemy : enemies) enemy->render();
     player->render();
 
     // HUD en coordenadas de pantalla, encima de todo.
@@ -400,11 +485,12 @@ void Scene::render() {
     info.lives = player->getLives();
     info.maxLives = Player::MAX_LIVES;
     info.secondsLeft = (timeLeftMs + 999) / 1000;
-    info.enemiesLeft = int(shooters.size());
+    info.enemiesLeft = int(enemies.size());
     info.level = level;
     info.fireRange = player->getFireRange();
     info.bombCapacity = int(player->getBombCapacity());
     info.invulnerable = invulnerableMode;
+    info.starSeconds = (player->getStarMs() + 999) / 1000;
     hud->render(info);
 }
 

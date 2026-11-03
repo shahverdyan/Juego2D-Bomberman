@@ -45,7 +45,6 @@ void Hud::init(ShaderProgram& program) {
     panel->changeAnimation(0);
     panel->setPosition(glm::vec2(0.f, 0.f));
 
-    // Hoja de corazones 48x16: lleno (x=0), medio (x=16, no se usa), vacío (x=32).
     heart = Sprite::createSprite(glm::vec2(HEART_SIZE, HEART_SIZE), glm::vec2(1.f / 3.f, 1.f),
         &heartTexture, &program);
     heart->setNumberAnimations(2);
@@ -85,7 +84,9 @@ void Hud::render(const HudInfo& info) {
     drawText("TIEMPO " + std::to_string(seconds / 60) + ":" + (ss.size() < 2 ? "0" : "") + ss,
         col2, row1);
     drawText("NIVEL " + std::to_string(info.level), col3, row1);
-    if (info.invulnerable) drawText("INMUNE", 556.f, row1);
+    // G muestra INMUNE; la estrella, INMUNE con la cuenta atrás.
+    if (info.invulnerable) drawText("INMUNE", 520.f, row1);
+    else if (info.starSeconds > 0) drawText("INMUNE " + std::to_string(info.starSeconds), 520.f, row1);
 
     drawText("ENEMIGOS " + std::to_string(info.enemiesLeft), col1, row2);
     drawText("EXPLOSION " + std::to_string(info.fireRange), col2, row2);

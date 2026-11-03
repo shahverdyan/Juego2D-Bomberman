@@ -75,7 +75,27 @@ Las cascadas y el marcador de puerta son decorativos, todavía sin animación ni
 - Tiempo límite en `Scene::LEVEL_TIME_SECONDS` (180 s). Al llegar a 0 se pierde una vida y el reloj vuelve a empezar.
 - G alterna la invulnerabilidad (el HUD muestra INMUNE). Bloquea todo el daño, incluido el del tiempo.
 
+## Jerarquía de enemigos y Walker (3 noviembre)
+
+- Nueva clase base `Enemy` (`Enemy.h/.cpp`). Guarda el cuerpo, la dirección, el sprite y el mapa. Ofrece `applyGravity`, `walk`, `floorAhead`, `touches` y `updateSprite`. Métodos virtuales: `update` (puro), `render`, `hitsPlayer` y `clearProjectiles`.
+- `Shooter` hereda de `Enemy` sin cambiar su comportamiento.
+- Nuevo `Walker` (estilo goomba, 32x32, 50 unidades/s): camina, gira solo al chocar con una pared y cae por los bordes. Sprite provisional `bub.png`, el antiguo Bubble.
+- La Scene guarda `std::vector<Enemy*>`. Daño por contacto o bala, muerte por explosión y contador del HUD valen para cualquier tipo.
+- Spawns provisionales en `Scene::spawnEnemies`: 2 shooters y 2 walkers (suelo derecho col 42 y plataforma central col 16).
+- Pendiente: tercer tipo de enemigo y sprite definitivo del walker.
+
+## Objetos en arbustos (3 noviembre)
+
+- Cuatro objetos (`Item.h`): Fire Up (+1 alcance), Bomb Up (+1 bomba simultánea), corazón (recupera una vida, máximo 3) y estrella (10 s invulnerable sin parpadeo; el HUD muestra INMUNE con la cuenta atrás).
+- Están escondidos en arbustos concretos (`Scene::spawnItems`): Fire Up (3,24), Bomb Up (4,22), corazón (11,20), estrella (15,16). Aparecen cuando el fuego destruye su arbusto y se recogen al tocarlos. El fuego no los destruye.
+- `tools/build_items.py` genera `items-atlas.png`. Fire Up y Bomb Up salen de las imágenes generadas con IA `*_gemini.jpeg`: se quitan el fondo de cuadros y el halo usando el contorno como barrera, con cierre morfológico. El corazón sale de la hoja de corazones y la estrella de `varied.png`.
+- Al reiniciar el nivel (sin vidas) los objetos vuelven a esconderse. Al perder una vida se conservan.
+
 ## Verificación realizada
+
+- Objetos: Debug y Release compilan sin avisos y superan `--smoke-test`. Una captura con Fire Up y Bomb Up revelados temporalmente muestra los sprites en sus celdas; después se restauró el código. Sin prueba manual de revelar, recoger ni de los efectos.
+
+- Enemigos: Debug y Release compilan sin avisos y superan `--smoke-test`. Prueba lógica temporal con stubs superada: los casos del Shooter siguen pasando tras el refactor. El Walker recorre el suelo de pared a pared (cols 1-46), cae de la plataforma central y `touches()` detecta el contacto.
 
 - HUD/vidas: Debug y Release compilan y superan `--smoke-test`. La captura muestra el HUD completo sobre el mapa. Sin prueba manual todavía de daño, reaparición, parpadeo, G, fin de tiempo ni reinicio del nivel.
 

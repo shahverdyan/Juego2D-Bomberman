@@ -34,6 +34,7 @@ public:
 
 	bool isSolid(int x, int y) const;
 	bool destroyFoliage(const std::vector<glm::ivec2>& cells);
+	bool isFoliage(int x, int y) const;
     glm::vec2 getSpawn() const { return glm::vec2(level.spawnX * level.tileSize, level.spawnY * level.tileSize); }
     glm::ivec2 getPixelSize() const { return glm::ivec2(level.width, level.height) * level.tileSize; }
 
