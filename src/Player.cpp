@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <cmath>
 #include <iostream>
 #include <stdexcept>
@@ -11,9 +12,12 @@
 #define FALL_STEP 4
 
 
+// Atlas rick-atlas.png (tools/build_player.py): 6 columnas x 2 filas de 24x24.
+// Fila 0 mira a la derecha, fila 1 a la izquierda.
+// Columnas: 0 quieto, 1-3 caminar, 4 subiendo, 5 cayendo.
 enum PlayerAnims
 {
-	STAND_LEFT, STAND_RIGHT, MOVE_LEFT, MOVE_RIGHT
+	STAND_LEFT, STAND_RIGHT, MOVE_LEFT, MOVE_RIGHT, JUMP_LEFT, JUMP_RIGHT, FALL_LEFT, FALL_RIGHT
 };
 
 
@@ -32,28 +36,26 @@ Player::~Player()
 void Player::init(const glm::ivec2 &tileMapPos, ShaderProgram &shaderProgram)
 {
 
-	if (!spritesheet.loadFromFile("images/bub.png", TEXTURE_PIXEL_FORMAT_RGBA))
-        throw std::runtime_error("Cannot load images/bub.png");
+	if (!spritesheet.loadFromFile("images/rick-atlas.png", TEXTURE_PIXEL_FORMAT_RGBA))
+        throw std::runtime_error("Cannot load images/rick-atlas.png");
     spritesheet.setMinFilter(GL_NEAREST);
     spritesheet.setMagFilter(GL_NEAREST);
-	sprite = Sprite::createSprite(glm::ivec2(32, 32), glm::vec2(0.25, 0.25), &spritesheet, &shaderProgram);
-	sprite->setNumberAnimations(4);
-	
-		sprite->setAnimationSpeed(STAND_LEFT, 8);
-		sprite->addKeyframe(STAND_LEFT, glm::vec2(0.f, 0.f));
-		
-		sprite->setAnimationSpeed(STAND_RIGHT, 8);
-		sprite->addKeyframe(STAND_RIGHT, glm::vec2(0.25f, 0.f));
-		
-		sprite->setAnimationSpeed(MOVE_LEFT, 8);
-		sprite->addKeyframe(MOVE_LEFT, glm::vec2(0.f, 0.f));
-		sprite->addKeyframe(MOVE_LEFT, glm::vec2(0.f, 0.25f));
-		sprite->addKeyframe(MOVE_LEFT, glm::vec2(0.f, 0.5f));
-		
-		sprite->setAnimationSpeed(MOVE_RIGHT, 8);
-		sprite->addKeyframe(MOVE_RIGHT, glm::vec2(0.25, 0.f));
-		sprite->addKeyframe(MOVE_RIGHT, glm::vec2(0.25, 0.25f));
-		sprite->addKeyframe(MOVE_RIGHT, glm::vec2(0.25, 0.5f));
+	const glm::vec2 cell(1.f / 6.f, 1.f / 2.f);
+	sprite = Sprite::createSprite(glm::ivec2(32, 32), cell, &spritesheet, &shaderProgram);
+	sprite->setNumberAnimations(8);
+	for (int side = 0; side < 2; ++side) {
+		// side 0 = izquierda (fila 1 del atlas), side 1 = derecha (fila 0).
+		const float v = (side == 0) ? cell.y : 0.f;
+		sprite->setAnimationSpeed(STAND_LEFT + side, 8);
+		sprite->addKeyframe(STAND_LEFT + side, glm::vec2(0.f, v));
+		sprite->setAnimationSpeed(MOVE_LEFT + side, 10);
+		for (int col = 1; col <= 3; ++col)
+			sprite->addKeyframe(MOVE_LEFT + side, glm::vec2(col * cell.x, v));
+		sprite->setAnimationSpeed(JUMP_LEFT + side, 8);
+		sprite->addKeyframe(JUMP_LEFT + side, glm::vec2(4 * cell.x, v));
+		sprite->setAnimationSpeed(FALL_LEFT + side, 8);
+		sprite->addKeyframe(FALL_LEFT + side, glm::vec2(5 * cell.x, v));
+	}
 		
 	sprite->changeAnimation(0);
 	tileMapDispl = tileMapPos;
@@ -63,6 +65,7 @@ void Player::init(const glm::ivec2 &tileMapPos, ShaderProgram &shaderProgram)
 
 bool Player::update(int deltaTime, const std::vector<Bomb>& bombs)
 {
+    invulnerableMs = std::max(0, invulnerableMs - deltaTime);
     auto& game = Game::instance();
     int direction = int(game.getKey(GLFW_KEY_RIGHT) || game.getKey(GLFW_KEY_D))
                   - int(game.getKey(GLFW_KEY_LEFT) || game.getKey(GLFW_KEY_A));
@@ -91,7 +94,9 @@ bool Player::update(int deltaTime, const std::vector<Bomb>& bombs)
             }
         });
     if (direction != 0) facingLeft = direction < 0;
-    int anim = direction ? (facingLeft ? MOVE_LEFT : MOVE_RIGHT) : (facingLeft ? STAND_LEFT : STAND_RIGHT);
+    const int side = facingLeft ? 0 : 1;
+    int anim = (direction ? MOVE_LEFT : STAND_LEFT) + side;
+    if (!body.grounded) anim = (body.vy < 0.f ? JUMP_LEFT : FALL_LEFT) + side;
     if (sprite->animation() != anim) sprite->changeAnimation(anim);
     sprite->update(deltaTime);
     sprite->setPosition(glm::vec2(body.x, body.y));
@@ -100,7 +105,17 @@ bool Player::update(int deltaTime, const std::vector<Bomb>& bombs)
 
 void Player::render()
 {
+	// Parpadeo mientras es invulnerable: se dibuja 100 ms sí, 100 ms no.
+	if (invulnerableMs > 0 && (invulnerableMs / 100) % 2 == 1) return;
 	sprite->render();
+}
+
+void Player::resetStats()
+{
+	lives = MAX_LIVES;
+	invulnerableMs = 0;
+	bombCapacity = 1;
+	fireRange = Bomb::DEFAULT_FIRE_RANGE;
 }
 
 void Player::setTileMap(TileMap *tileMap)

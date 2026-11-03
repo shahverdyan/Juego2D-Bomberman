@@ -15,6 +15,7 @@ void Game::init()
 bool Game::update(int deltaTime)
 {
 	if (consumeKey(GLFW_KEY_R)) scene.resetPlayer();
+	if (consumeKey(GLFW_KEY_G)) scene.toggleInvulnerability();
 	scene.update(deltaTime);
 
 	return bPlay;

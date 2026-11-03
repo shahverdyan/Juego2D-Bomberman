@@ -45,7 +45,44 @@ Las cascadas y el marcador de puerta son decorativos, todavía sin animación ni
 - No se permite más de una bomba en la misma celda. R reinicia al jugador y limpia bombas activas.
 - Pendiente: daño al jugador/enemigos, bloques destructibles y recoger power-ups (fase 2).
 
+## Enemigo Shooter (3 noviembre)
+
+- Nuevas clases `Shooter.h/.cpp`. Cuerpo de 32x48 con la misma física de `Movement.h` (gravedad, colisión), sin salto.
+- Patrulla a 60 unidades/s y se da la vuelta ante una pared o el borde de la plataforma.
+- Ve al jugador solo si está delante, a 8 tiles como máximo, en la línea de la bala y sin tiles sólidos en medio. Entonces se para.
+- Dispara 400 ms después de verlo y luego cada 1200 ms. Bala horizontal de 16x16 a 240 unidades/s que desaparece al tocar terreno sólido.
+- `hitsPlayer()` informa del impacto y la Scene decide. Provisional hasta tener vidas: el impacto devuelve al jugador al inicio, igual que R.
+- Dos shooters con posiciones fijas en `Scene::init`: pasillo inferior (col 14) y repisa superior (col 24). No están en `level01.txt` porque `build_world1.py` lo sobrescribe.
+- Sprites de Sneed (personaje custom de terceros, no de Bomberman) generados con `tools/build_shooter.py` en `shooter-atlas.png` y `shooter-bullet.png`.
+- Aviso: el PNG fuente de Sneed en la copia de trabajo (795x1024 RGB, captura con el fondo de cuadros) difiere del versionado en git (94x121 RGBA con transparencia). El script usa la copia de trabajo y elimina el fondo por relleno desde los bordes.
+- Las explosiones matan shooters: mientras dura el fuego (0.5 s), el shooter cuyo cuerpo toca una celda de la cruz se elimina con sus balas. No reaparecen con R.
+- Pendiente: daño por contacto, vidas, reaparición de enemigos al reiniciar y añadir los shooters al formato de nivel.
+
+## Jugador con sprites de Rick (3 noviembre)
+
+- Bubble sustituido por Rick (hoja custom de Rick & Morty de Mister Mike, de terceros, no de Bomberman). `tools/build_player.py` genera `rick-atlas.png`: quieto, 3 fotogramas de caminar, subida y caída, en ambas direcciones.
+- El script lee la hoja original 851x84 del commit 95db676, porque la copia de trabajo es una captura reescalada x1.2 con fondo de cuadros. Celdas de 24x24 dibujadas en el quad de 32x32. Física y hitbox sin cambios.
+- Nuevas animaciones de salto (vy < 0) y caída cuando el jugador no está en el suelo.
+
+## HUD, vidas y daño (3 noviembre)
+
+- Nueva clase `Hud` (`Hud.h/.cpp`): franja superior de 48 px con vidas (corazones llenos o vacíos de `Pixel Heart Sprite Sheet 16x16.png`, sin medios), tiempo restante, nivel, enemigos restantes, alcance de la explosión y capacidad de bombas simultáneas.
+- Texto con una fuente pixel 5x7 propia, generada por `tools/build_hud_font.py` en `hud-font.png`. Un único sprite con una animación por carácter.
+- La cámara se centra en la zona visible bajo el HUD y puede subir 48 px por encima del mapa para ver la primera fila.
+- Tres vidas (`Player::MAX_LIVES`). El jugador pierde una por bala, por contacto con un shooter, por el fuego de una explosión (también la suya) o por agotar el tiempo.
+- Al perder una vida reaparece en el spawn con 2 s de invulnerabilidad (parpadeo). Enemigos, bombas y tiempo siguen igual.
+- Provisional hasta tener menú: sin vidas se recarga el nivel (mapa, shooters, tiempo, vidas y mejoras).
+- Tiempo límite en `Scene::LEVEL_TIME_SECONDS` (180 s). Al llegar a 0 se pierde una vida y el reloj vuelve a empezar.
+- G alterna la invulnerabilidad (el HUD muestra INMUNE). Bloquea todo el daño, incluido el del tiempo.
+
 ## Verificación realizada
+
+- HUD/vidas: Debug y Release compilan y superan `--smoke-test`. La captura muestra el HUD completo sobre el mapa. Sin prueba manual todavía de daño, reaparición, parpadeo, G, fin de tiempo ni reinicio del nivel.
+
+- Rick y muerte por explosión: Debug y Release compilan y superan `--smoke-test`. La captura muestra a Rick con transparencia. La muerte por explosión todavía no está probada ni en un test automático ni a mano.
+
+- Shooter: prueba lógica temporal (Shooter.cpp con stubs de Sprite/TileMap sobre la colisión real de level01) superada. Cubre patrulla sin caer, giro en pared, repisa, impacto tras la reacción, jugador detrás, a otra altura, fuera de alcance, muro intermedio y bala destruida por pared.
+- Shooter: Debug y Release compilan sin avisos nuevos. Ambos superan `--smoke-test` y la captura muestra el sprite con transparencia sobre el suelo.
 
 - Ajustado el ciclo de animación: tres fotogramas a 1 fps, una sola actualización por ciclo, y ampliación de la bomba en los últimos 0.5 s de mecha; al detonar se detiene el fuego.
 - La prueba de bomba cubre mecha, fase de explosión, alcance configurable y aterrizaje/salto sobre la plataforma.

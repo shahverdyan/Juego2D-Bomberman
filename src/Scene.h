@@ -10,6 +10,8 @@
 #include "TileMap.h"
 #include "Player.h"
 #include "Bomb.h"
+#include "Shooter.h"
+#include "Hud.h"
 
 enum BlastType {
     BLAST_CENTER = 0,      // Columna 6 (Cruz central)
@@ -32,10 +34,19 @@ public:
     void render();
     void shutdown();
     void resetPlayer();
+    void toggleInvulnerability() { invulnerableMode = !invulnerableMode; }
+
+    // Tiempo límite del nivel. Cambiar aquí (los niveles futuros serán más pequeños).
+    static const int LEVEL_TIME_SECONDS = 3 * 60;
 
 private:
     void initShaders();
     void detonate(Bomb& bomb);
+    void spawnShooters();
+    bool touchesFire(const movement::Body& body) const;
+    void killShootersInBlast();
+    void damagePlayer();
+    void restartLevel();
 
     TileMap* map;
     Player* player;
@@ -50,6 +61,17 @@ private:
     Sprite* explosionSprites[BLAST_TYPE_COUNT];
 
     std::vector<Bomb> bombs;
+
+    // Enemigos shooter: texturas compartidas por todos ellos.
+    Texture* shooterTexture;
+    Texture* shooterBulletTexture;
+    std::vector<Shooter*> shooters;
+
+    Hud* hud;
+    int level;
+    int timeLeftMs;
+    bool invulnerableMode;  // tecla G
+
     ShaderProgram texProgram;
     glm::mat4 projection;
     float currentTime;

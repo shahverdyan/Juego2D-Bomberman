@@ -17,6 +17,12 @@ Scene::Scene() {
     for (int i = 0; i < BLAST_TYPE_COUNT; ++i) {
         explosionSprites[i] = NULL;
     }
+    shooterTexture = NULL;
+    shooterBulletTexture = NULL;
+    hud = NULL;
+    level = 1;
+    timeLeftMs = LEVEL_TIME_SECONDS * 1000;
+    invulnerableMode = false;
 }
 
 Scene::~Scene() {}
@@ -34,6 +40,13 @@ void Scene::shutdown() {
     }
 
     delete explosionTexture; explosionTexture = NULL;
+
+    for (Shooter* shooter : shooters) delete shooter;
+    shooters.clear();
+    delete shooterTexture; shooterTexture = NULL;
+    delete shooterBulletTexture; shooterBulletTexture = NULL;
+
+    delete hud; hud = NULL;
     delete map; map = NULL;
     bombs.clear();
     texProgram.free();
@@ -42,6 +55,7 @@ void Scene::shutdown() {
 void Scene::resetPlayer() {
     player->setPosition(map->getSpawn());
     bombs.clear();
+    for (Shooter* shooter : shooters) shooter->clearBullets();
 }
 
 void Scene::init() {
@@ -102,6 +116,23 @@ void Scene::init() {
         explosionSprites[i]->changeAnimation(0);
     }
 
+    // Enemigos shooter (provisional: posiciones fijas hasta que el nivel las defina).
+    shooterTexture = new Texture();
+    if (!shooterTexture->loadFromFile("images/shooter-atlas.png", TEXTURE_PIXEL_FORMAT_RGBA))
+        throw std::runtime_error("Cannot load images/shooter-atlas.png");
+    shooterTexture->setMinFilter(GL_NEAREST);
+    shooterTexture->setMagFilter(GL_NEAREST);
+    shooterBulletTexture = new Texture();
+    if (!shooterBulletTexture->loadFromFile("images/shooter-bullet.png", TEXTURE_PIXEL_FORMAT_RGBA))
+        throw std::runtime_error("Cannot load images/shooter-bullet.png");
+    shooterBulletTexture->setMinFilter(GL_NEAREST);
+    shooterBulletTexture->setMagFilter(GL_NEAREST);
+
+    spawnShooters();
+
+    hud = new Hud();
+    hud->init(texProgram);
+
     player = new Player();
     player->init(glm::ivec2(0, 0), texProgram);
     resetPlayer();
@@ -110,6 +141,45 @@ void Scene::init() {
     projection = glm::ortho(0.f, float(SCREEN_WIDTH), float(SCREEN_HEIGHT), 0.f);
     currentTime = 0.0f;
     update(0);
+}
+
+// Crea los shooters del nivel (provisional: posiciones fijas hasta que el nivel las defina).
+void Scene::spawnShooters() {
+    const float tileSize = float(map->getTileSize());
+    // {columna, fila del suelo, mira a la izquierda}: pasillo inferior y repisa superior.
+    const struct { int tileX, floorRow; bool facingLeft; } shooterSpawns[] = {
+        { 14, 25, false },
+        { 24, 10, true },
+    };
+    for (const auto& spawn : shooterSpawns) {
+        const glm::vec2 position(spawn.tileX * tileSize, spawn.floorRow * tileSize - Shooter::HEIGHT);
+        Shooter* shooter = new Shooter(position, spawn.facingLeft);
+        shooter->init(shooterTexture, shooterBulletTexture, texProgram);
+        shooter->setTileMap(map);
+        shooters.push_back(shooter);
+    }
+}
+
+// Quita una vida si el jugador puede recibir daño. Sin vidas, se reinicia el nivel.
+void Scene::damagePlayer() {
+    if (invulnerableMode || !player->canBeHurt()) return;
+    player->loseLife();
+    if (player->getLives() <= 0) restartLevel();
+    else player->setPosition(map->getSpawn());
+}
+
+// Provisional hasta tener menú: al perder las 3 vidas se recarga el nivel
+// (mapa, enemigos, tiempo) y el jugador vuelve a sus valores iniciales.
+void Scene::restartLevel() {
+    for (Shooter* shooter : shooters) delete shooter;
+    shooters.clear();
+    delete map;
+    map = TileMap::createTileMap("levels/level01.txt", glm::vec2(0, 0), texProgram);
+    player->setTileMap(map);
+    player->resetStats();
+    spawnShooters();
+    resetPlayer();
+    timeLeftMs = LEVEL_TIME_SECONDS * 1000;
 }
 
 void Scene::update(int deltaTime) {
@@ -145,6 +215,31 @@ void Scene::update(int deltaTime) {
         }
     }
 
+    killShootersInBlast();
+
+    // Daño al jugador: bala, contacto con un enemigo o fuego de una explosión.
+    // Primero se recoge si hay daño y después se aplica, porque damagePlayer()
+    // puede reiniciar el nivel y borrar los shooters.
+    const movement::Body& playerBody = player->getBody();
+    bool playerHurt = false;
+    for (Shooter* shooter : shooters) {
+        shooter->update(deltaTime, playerBody);
+        if (shooter->hitsPlayer(playerBody)) playerHurt = true;
+        const movement::Body& enemy = shooter->getBody();
+        if (playerBody.x < enemy.x + enemy.width && playerBody.x + playerBody.width > enemy.x &&
+            playerBody.y < enemy.y + enemy.height && playerBody.y + playerBody.height > enemy.y)
+            playerHurt = true;
+    }
+    if (touchesFire(playerBody)) playerHurt = true;
+    if (playerHurt) damagePlayer();
+
+    // Tiempo límite: al llegar a 0 se pierde una vida y el reloj vuelve a empezar.
+    timeLeftMs -= deltaTime;
+    if (timeLeftMs <= 0) {
+        timeLeftMs = LEVEL_TIME_SECONDS * 1000;
+        damagePlayer();
+    }
+
     const bool hasExplodingBomb = std::any_of(bombs.begin(), bombs.end(),
         [](const Bomb& bomb) { return bomb.isExploding(); });
 
@@ -157,7 +252,11 @@ void Scene::update(int deltaTime) {
     const glm::vec2 pos = player->getPosition();
     const glm::ivec2 size = map->getPixelSize();
     float cx = std::max(0.f, std::min(pos.x + 16.f - SCREEN_WIDTH / 2.f, float(size.x - SCREEN_WIDTH)));
-    float cy = std::max(0.f, std::min(pos.y + 16.f - SCREEN_HEIGHT / 2.f, float(size.y - SCREEN_HEIGHT)));
+    // El HUD tapa la franja superior: la cámara se centra en la zona visible
+    // y puede subir Hud::HEIGHT por encima del mapa para ver la primera fila.
+    const float visibleCenterY = (Hud::HEIGHT + SCREEN_HEIGHT) / 2.f;
+    float cy = std::max(-float(Hud::HEIGHT),
+        std::min(pos.y + 16.f - visibleCenterY, float(size.y - SCREEN_HEIGHT)));
     projection = glm::ortho(cx, cx + SCREEN_WIDTH, cy + SCREEN_HEIGHT, cy);
 }
 
@@ -220,6 +319,33 @@ void Scene::detonate(Bomb& bomb) {
     bomb.setBlastCells(blastCells);
 }
 
+// ¿Toca el cuerpo alguna celda de una explosión activa (dura 0.5 s)?
+bool Scene::touchesFire(const movement::Body& body) const {
+    const float tileSize = float(map->getTileSize());
+    for (const Bomb& bomb : bombs) {
+        if (!bomb.isExploding()) continue;
+        for (const Bomb::BlastCell& cell : bomb.getBlastCells()) {
+            const float cellX = cell.x * tileSize, cellY = cell.y * tileSize;
+            if (body.x < cellX + tileSize && body.x + body.width > cellX &&
+                body.y < cellY + tileSize && body.y + body.height > cellY)
+                return true;
+        }
+    }
+    return false;
+}
+
+// Cualquier shooter que toque el fuego muere: se borra junto con sus balas.
+void Scene::killShootersInBlast() {
+    for (auto it = shooters.begin(); it != shooters.end();) {
+        if (touchesFire((*it)->getBody())) {
+            delete *it;
+            it = shooters.erase(it);
+        } else {
+            ++it;
+        }
+    }
+}
+
 void Scene::render() {
     glm::mat4 modelview;
 
@@ -264,7 +390,22 @@ void Scene::render() {
             }
         }
     }
+    for (Shooter* shooter : shooters) shooter->render();
     player->render();
+
+    // HUD en coordenadas de pantalla, encima de todo.
+    texProgram.setUniformMatrix4f("projection",
+        glm::ortho(0.f, float(SCREEN_WIDTH), float(SCREEN_HEIGHT), 0.f));
+    HudInfo info;
+    info.lives = player->getLives();
+    info.maxLives = Player::MAX_LIVES;
+    info.secondsLeft = (timeLeftMs + 999) / 1000;
+    info.enemiesLeft = int(shooters.size());
+    info.level = level;
+    info.fireRange = player->getFireRange();
+    info.bombCapacity = int(player->getBombCapacity());
+    info.invulnerable = invulnerableMode;
+    hud->render(info);
 }
 
 void Scene::initShaders() {
