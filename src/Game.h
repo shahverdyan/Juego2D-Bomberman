@@ -31,6 +31,9 @@ public:
 	void init();
     void shutdown();
     void startMapEffectsTest();
+    void startOriginalEffectsTest();
+    void runHudTestStep(int step);
+    void runBombCollisionTest();
 	bool update(int deltaTime);
 	void render();
 

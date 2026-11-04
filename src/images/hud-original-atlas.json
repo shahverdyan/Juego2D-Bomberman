@@ -1,0 +1,74 @@
+{
+  "source": "Game Boy _ GBC - Pocket Bomberman - Characters - Overworld (Color).gif",
+  "cell_size": 8,
+  "pink": [
+    236,
+    149,
+    205,
+    255
+  ],
+  "glyphs": "0123456789:",
+  "icons": [
+    {
+      "id": 11,
+      "name": "clock",
+      "rect": [
+        55,
+        42,
+        8,
+        8
+      ]
+    },
+    {
+      "id": 12,
+      "name": "face",
+      "rect": [
+        25,
+        42,
+        8,
+        8
+      ]
+    },
+    {
+      "id": 13,
+      "name": "enemies",
+      "rect": [
+        35,
+        42,
+        8,
+        8
+      ]
+    },
+    {
+      "id": 14,
+      "name": "bomb",
+      "rect": [
+        15,
+        42,
+        8,
+        8
+      ]
+    },
+    {
+      "id": 15,
+      "name": "range",
+      "rect": [
+        5,
+        42,
+        8,
+        8
+      ]
+    },
+    {
+      "id": 16,
+      "name": "gold_heart",
+      "rect": [
+        45,
+        42,
+        8,
+        8
+      ]
+    }
+  ],
+  "panel_id": 17
+}

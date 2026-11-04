@@ -1,5 +1,6 @@
 #pragma once
 #include <algorithm>
+#include <cmath>
 #include <vector>
 
 class Bomb {
@@ -18,7 +19,7 @@ public:
 
     Bomb(int x, int y, int tileSize, int fuseDurationMs = DEFAULT_FUSE_MS,
         int fireRange = DEFAULT_FIRE_RANGE)
-        : x(x), y(y), tileSize(tileSize), remainingMs(std::max(0, fuseDurationMs)),
+        : x(x), y(y), tileSize(tileSize), fuseDurationMs(std::max(0, fuseDurationMs)), remainingMs(std::max(0, fuseDurationMs)),
           fireRange(std::max(1, fireRange)), exploding(false), explosionRemainingMs(0) {}
 
     bool update(int deltaTime) {
@@ -34,6 +35,25 @@ public:
         return true;
     }
 
+    // Select the tile containing the player's centre, not the leading edge.
+    static int snapToBodyCell(float position, float extent, int cellSize) {
+        return int(std::floor((position + extent * .5f) / cellSize)) * cellSize;
+    }
+    bool overlapsPlayer(float px, float py, float width, float height) const {
+        return px < x + tileSize && px + width > x && py < y + tileSize && py + height > y;
+    }
+    // A newly planted bomb permits its owner to exit once, preventing entrapment.
+    void allowOwnerExit(float px, float py, float width, float height) {
+        ownerExitAllowed = overlapsPlayer(px,py,width,height);
+    }
+    void updateOwnerExit(float px, float py, float width, float height) {
+        if (ownerExitAllowed && !overlapsPlayer(px,py,width,height)) ownerExitAllowed = false;
+    }
+    bool canOwnerExit() const { return ownerExitAllowed; }
+    bool blocksPlayerTile(int tx, int ty) const {
+        return !exploding && !ownerExitAllowed && tx == x / tileSize && ty == y / tileSize;
+    }
+
     // Include the first reactive obstacle, but stop fire before ordinary terrain.
     template<class Solid, class Reactive>
     static int blastDistance(int x, int y, int dx, int dy, int range, Solid solid, Reactive reactive) {
@@ -45,6 +65,24 @@ public:
             distance=step;
         }
         return distance;
+    }
+
+    // Every bomb owns its visual phase: new bombs never reset an existing explosion.
+    int getBombFrame() const {
+        const int age=fuseDurationMs-remainingMs;
+        const int mediumStart=std::max(0,fuseDurationMs-1500);
+        const int fastStart=std::max(0,fuseDurationMs-500);
+        const float phase=std::min(age,mediumStart)/220.f
+            + std::min(std::max(age-mediumStart,0),fastStart-mediumStart)/140.f
+            + std::max(age-fastStart,0)/80.f;
+        const int pulse[4]={2,1,0,1};
+        return pulse[int(phase)%4];
+    }
+    int getExplosionFrame() const {
+        if (!exploding) return 0;
+        const int age=DEFAULT_EXPLOSION_MS-explosionRemainingMs;
+        const int sequence[6]={0,1,2,2,1,0};
+        return sequence[std::min(5,age*6/DEFAULT_EXPLOSION_MS)];
     }
 
     void setBlastCells(const std::vector<BlastCell>& cells) { blastCells = cells; }
@@ -61,8 +99,10 @@ private:
     int x;
     int y;
     int tileSize;
+    int fuseDurationMs;
     int remainingMs;
     int fireRange;
+    bool ownerExitAllowed = false;
     bool exploding;
     int explosionRemainingMs;
     std::vector<BlastCell> blastCells;

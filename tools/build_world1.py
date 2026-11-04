@@ -9,7 +9,7 @@ from PIL import Image
 ROOT = Path(__file__).resolve().parents[1]
 TILES = ROOT / 'src/images/tilesets'
 SOURCE = TILES / 'Game Boy _ GBC - Pocket Bomberman - Stages (World 1) - Stage 1-4.png'
-# Source grid origin (15,13), tile size 16. Numbers are one-based atlas IDs.
+# Source grid origin (15,12), tile size 16. Numbers are one-based atlas IDs.
 CATALOG = [
     ('background', 2, 1), ('grass_left', 14, 2), ('grass_middle', 15, 2),
     ('grass_right', 19, 2), ('column_body', 5, 5), ('floor', 1, 14),
@@ -25,7 +25,7 @@ def extract_atlas():
     atlas = Image.new('RGBA', (64, 64))
     manifest = []
     for index, (name, column, row) in enumerate(CATALOG):
-        x, y = 15 + column * 16, 13 + row * 16
+        x, y = 15 + column * 16, 12 + row * 16
         tile = original.crop((x, y, x + 16, y + 16))
         atlas.paste(tile, ((index % 4) * 16, (index // 4) * 16))
         manifest.append(dict(id=index + 1, name=name, source_rect=[x, y, 16, 16]))
@@ -35,13 +35,39 @@ def extract_atlas():
         tile_size=16, columns=4, rows=4, tiles=manifest), indent=2) + '\n', encoding='utf-8')
 
 
+def render_preview(atlas, background, foreground):
+    height, width = len(background), len(background[0])
+    preview = Image.new('RGBA', (width * 16, height * 16))
+    for layer in [background, foreground]:
+        for y, row in enumerate(layer):
+            for x, tile_id in enumerate(row):
+                if tile_id:
+                    i = tile_id - 1
+                    tile = atlas.crop(((i % 4)*16, (i // 4)*16, (i % 4+1)*16, (i // 4+1)*16))
+                    preview.alpha_composite(tile, (x*16, y*16))
+    preview.save(ROOT / 'docs/level01-preview.png')
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--layout-only', action='store_true', help='Reuse existing atlas; regenerate only level and preview')
+    modes = parser.add_mutually_exclusive_group()
+    modes.add_argument('--layout-only', action='store_true', help='Reuse existing atlas; regenerate only level and preview')
+    modes.add_argument('--atlas-only', action='store_true', help='Extract tiles and refresh preview without changing either map file')
     args = parser.parse_args()
     if not args.layout_only:
         extract_atlas()
     atlas = Image.open(TILES / 'world1-atlas.png').convert('RGBA')
+    if args.atlas_only:
+        from tiled_map import read_level
+        level = read_level(ROOT / 'src/levels/level01.txt')
+        width = level['width']
+        layers = [
+            [level['layers'][name][y*width:(y+1)*width] for y in range(level['height'])]
+            for name in ['BACKGROUND', 'FOREGROUND']
+        ]
+        render_preview(atlas, *layers)
+        print('Extracted sixteen complete 16x16 tiles; level01.txt and level01.tmj unchanged.')
+        return
 
     width, height = 48, 26
     bg = [[1] * width for _ in range(height)]
@@ -132,15 +158,7 @@ def main():
     (ROOT / 'src/levels/level01.txt').write_text('\n'.join(lines) + '\n', encoding='utf-8')
 
     # Whole-level preview at source resolution, separate from the live camera.
-    preview = Image.new('RGBA', (width * 16, height * 16))
-    for layer in [bg, fg]:
-        for y, row in enumerate(layer):
-            for x, tile_id in enumerate(row):
-                if tile_id:
-                    i = tile_id - 1
-                    tile = atlas.crop(((i % 4)*16, (i // 4)*16, (i % 4+1)*16, (i // 4+1)*16))
-                    preview.alpha_composite(tile, (x*16, y*16))
-    preview.save(ROOT / 'docs/level01-preview.png')
+    render_preview(atlas, bg, fg)
     from tiled_map import export_tiled, import_tiled
     editor = ROOT / 'src/levels/level01.tmj'
     level_file = ROOT / 'src/levels/level01.txt'

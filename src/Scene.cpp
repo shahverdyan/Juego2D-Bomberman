@@ -11,8 +11,6 @@ Scene::Scene() {
     player = NULL;
     bombTexture = NULL;
     bombSprite = NULL;
-    mediumBombSprite = NULL;
-    largeBombSprite = NULL;
     explosionTexture = NULL;
     for (int i = 0; i < BLAST_TYPE_COUNT; ++i) {
         explosionSprites[i] = NULL;
@@ -33,8 +31,6 @@ Scene::~Scene() {}
 void Scene::shutdown() {
     delete player; player = NULL;
     delete bombSprite; bombSprite = NULL;
-    delete mediumBombSprite; mediumBombSprite = NULL;
-    delete largeBombSprite; largeBombSprite = NULL;
     delete bombTexture; bombTexture = NULL;
 
     for (int i = 0; i < BLAST_TYPE_COUNT; ++i) {
@@ -70,58 +66,34 @@ void Scene::init() {
     initShaders();
     map = TileMap::createTileMap("levels/level01.txt", glm::vec2(0, 0), texProgram);
 
-    // Textura y Sprites para los 3 estados de la Bomba
     bombTexture = new Texture();
-    if (!bombTexture->loadFromFile("images/bomb.png", TEXTURE_PIXEL_FORMAT_RGBA))
-        throw std::runtime_error("Cannot load images/bomb.png");
+    if (!bombTexture->loadFromFile("images/original-bomb-atlas.png",TEXTURE_PIXEL_FORMAT_RGBA))
+        throw std::runtime_error("Cannot load original bomb atlas");
     bombTexture->setMinFilter(GL_NEAREST);
     bombTexture->setMagFilter(GL_NEAREST);
+    const float tileSize=float(map->getTileSize());
+    const float sourcePixel=tileSize/16.f;
+    bombSprite=Sprite::createSprite(glm::vec2(20.f*sourcePixel),glm::vec2(1.f/3.f,1.f),bombTexture,&texProgram);
+    bombSprite->setNumberAnimations(3);
+    for(int frame=0;frame<3;++frame) {
+        bombSprite->setAnimationSpeed(frame,1);
+        bombSprite->addKeyframe(frame,glm::vec2(frame/3.f,0.f));
+    }
+    bombSprite->changeAnimation(2);
 
-    const float tileSize = float(map->getTileSize());
-
-    // Estado 1: Normal
-    bombSprite = Sprite::createSprite(glm::vec2(tileSize, tileSize), glm::vec2(1.f, 1.f), bombTexture, &texProgram);
-    bombSprite->setNumberAnimations(1);
-    bombSprite->setAnimationSpeed(0, 1);
-    bombSprite->addKeyframe(0, glm::vec2(0.f, 0.f));
-    bombSprite->changeAnimation(0);
-
-    // Estado 2: Medio
-    mediumBombSprite = Sprite::createSprite(glm::vec2(tileSize * 1.125f, tileSize * 1.125f), glm::vec2(1.f, 1.f), bombTexture, &texProgram);
-    mediumBombSprite->setNumberAnimations(1);
-    mediumBombSprite->setAnimationSpeed(0, 1);
-    mediumBombSprite->addKeyframe(0, glm::vec2(0.f, 0.f));
-    mediumBombSprite->changeAnimation(0);
-
-    // Estado 3: Grande
-    largeBombSprite = Sprite::createSprite(glm::vec2(tileSize * 1.25f, tileSize * 1.25f), glm::vec2(1.f, 1.f), bombTexture, &texProgram);
-    largeBombSprite->setNumberAnimations(1);
-    largeBombSprite->setAnimationSpeed(0, 1);
-    largeBombSprite->addKeyframe(0, glm::vec2(0.f, 0.f));
-    largeBombSprite->changeAnimation(0);
-
-    // Atlas de Fuego (9x7 casillas)
     explosionTexture = new Texture();
-    if (!explosionTexture->loadFromFile("images/fire-atlas.png", TEXTURE_PIXEL_FORMAT_RGBA))
-        throw std::runtime_error("Cannot load images/fire-atlas.png");
+    if (!explosionTexture->loadFromFile("images/original-fire-atlas.png",TEXTURE_PIXEL_FORMAT_RGBA))
+        throw std::runtime_error("Cannot load original fire atlas");
     explosionTexture->setMinFilter(GL_NEAREST);
     explosionTexture->setMagFilter(GL_NEAREST);
-
-    const glm::vec2 fireCellSize(1.f / 9.f, 1.f / 7.f);
-
-    // Mapeo corregido de columnas:
-    // Center(6), Top(0), Bottom(1), Left(2), Right(3), VertMid(4), HorizMid(5)
-    const int fireCols[BLAST_TYPE_COUNT] = { 6, 0, 1, 2, 3, 4, 5 };
-
-    for (int i = 0; i < BLAST_TYPE_COUNT; ++i) {
-        explosionSprites[i] = Sprite::createSprite(glm::vec2(tileSize, tileSize), fireCellSize, explosionTexture, &texProgram);
-        explosionSprites[i]->setNumberAnimations(1);
-        explosionSprites[i]->setAnimationSpeed(0, 10);
-
-        for (int frame = 1; frame <= 5; ++frame) {
-            explosionSprites[i]->addKeyframe(0, glm::vec2(fireCols[i] / 9.f, frame / 7.f));
+    for(int type=0;type<BLAST_TYPE_COUNT;++type) {
+        explosionSprites[type]=Sprite::createSprite(glm::vec2(tileSize),glm::vec2(1.f/7.f,1.f/3.f),explosionTexture,&texProgram);
+        explosionSprites[type]->setNumberAnimations(3);
+        for(int frame=0;frame<3;++frame) {
+            explosionSprites[type]->setAnimationSpeed(frame,1);
+            explosionSprites[type]->addKeyframe(frame,glm::vec2(type/7.f,frame/3.f));
         }
-        explosionSprites[i]->changeAnimation(0);
+        explosionSprites[type]->changeAnimation(0);
     }
 
     // Texturas de enemigos.
@@ -231,7 +203,7 @@ void Scene::pickUpItems() {
         switch (it->type) {
         case ITEM_FIRE_UP: player->increaseFireRange(); break;
         case ITEM_BOMB_UP: player->increaseBombCapacity(); break;
-        case ITEM_HEART:   player->gainLife(); break;
+        case ITEM_HEART:   player->collectGoldHeart(); break;
         case ITEM_STAR:    player->startStar(); break;
         default: break;
         }
@@ -242,7 +214,7 @@ void Scene::pickUpItems() {
 // Quita una vida si el jugador puede recibir daño. Sin vidas, se reinicia el nivel.
 void Scene::damagePlayer() {
     if (invulnerableMode || !player->canBeHurt()) return;
-    player->loseLife();
+    if (player->takeHit() != PlayerHealth::Damage::LifeLost) return;
     if (player->getLives() <= 0) restartLevel();
     else player->setPosition(map->getSpawn());
 }
@@ -272,29 +244,7 @@ void Scene::update(int deltaTime) {
     bombs.erase(std::remove_if(bombs.begin(), bombs.end(),
         [](const Bomb& bomb) { return bomb.isExpired(); }), bombs.end());
 
-    if (player->update(deltaTime, bombs)) {
-        const glm::vec2 pos = player->getPosition();
-        const int tileSize = map->getTileSize();
-        const int bombX = int(std::floor(pos.x / tileSize)) * tileSize;
-        const int bombY = int(std::floor(pos.y / tileSize)) * tileSize;
-
-        const bool alreadyPlaced = std::any_of(bombs.begin(), bombs.end(),
-            [bombX, bombY](const Bomb& bomb) {
-                return !bomb.isExploding() && bomb.getX() == bombX && bomb.getY() == bombY;
-            });
-
-        const std::size_t activeBombCount = std::count_if(bombs.begin(), bombs.end(),
-            [](const Bomb& bomb) { return !bomb.isExploding(); });
-
-        if (!map->isSolid(bombX / tileSize, bombY / tileSize) && !alreadyPlaced && player->canPlaceBomb(activeBombCount)) {
-            if (activeBombCount == 0) {
-                for (int i = 0; i < BLAST_TYPE_COUNT; ++i) {
-                    explosionSprites[i]->changeAnimation(0);
-                }
-            }
-            bombs.emplace_back(bombX, bombY, tileSize, Bomb::DEFAULT_FUSE_MS, player->getFireRange());
-        }
-    }
+    if (player->update(deltaTime, bombs)) placeBomb();
 
     killEnemiesInBlast();
     pickUpItems();
@@ -318,20 +268,32 @@ void Scene::update(int deltaTime) {
         damagePlayer();
     }
 
-    const bool hasExplodingBomb = std::any_of(bombs.begin(), bombs.end(),
-        [](const Bomb& bomb) { return bomb.isExploding(); });
-
-    if (hasExplodingBomb) {
-        for (int i = 0; i < BLAST_TYPE_COUNT; ++i) {
-            explosionSprites[i]->update(deltaTime);
-        }
-    }
-
     const glm::vec2 pos = player->getPosition();
     const glm::ivec2 size = map->getPixelSize();
     auto camera = view::follow(pos.x,pos.y,size.x,size.y,map->getTileSize());
-    if (mapEffectsTest) camera = view::follow(28.f*32,15.f*32,size.x,size.y,map->getTileSize());
+    if (originalEffectsTest) camera = view::follow(20.f*32,7.f*32,size.x,size.y,map->getTileSize());
+    else if (mapEffectsTest) camera = view::follow(28.f*32,15.f*32,size.x,size.y,map->getTileSize());
     projection = glm::ortho(camera.x,camera.x+camera.width,camera.y+camera.height,camera.y);
+}
+
+void Scene::placeBomb() {
+    const movement::Body& body = player->getBody();
+    const int tileSize = map->getTileSize();
+    const int bombX = Bomb::snapToBodyCell(body.x,body.width,tileSize);
+    const int bombY = Bomb::snapToBodyCell(body.y,body.height,tileSize);
+
+    const bool alreadyPlaced = std::any_of(bombs.begin(), bombs.end(),
+        [bombX, bombY](const Bomb& bomb) {
+            return !bomb.isExploding() && bomb.getX() == bombX && bomb.getY() == bombY;
+        });
+
+    const std::size_t activeBombCount = std::count_if(bombs.begin(), bombs.end(),
+        [](const Bomb& bomb) { return !bomb.isExploding(); });
+
+    if (!map->isSolid(bombX / tileSize, bombY / tileSize) && !alreadyPlaced && player->canPlaceBomb(activeBombCount)) {
+        bombs.emplace_back(bombX, bombY, tileSize, Bomb::DEFAULT_FUSE_MS, player->getFireRange());
+        bombs.back().allowOwnerExit(body.x,body.y,body.width,body.height);
+    }
 }
 
 void Scene::detonate(Bomb& bomb) {
@@ -424,7 +386,7 @@ void Scene::killEnemiesInBlast() {
 }
 
 void Scene::render() {
-    glViewport(0,0,SCREEN_WIDTH,SCREEN_HEIGHT-Hud::HEIGHT);
+    glViewport(0,Hud::HEIGHT,SCREEN_WIDTH,SCREEN_HEIGHT-Hud::HEIGHT);
     glm::mat4 modelview;
 
     texProgram.use();
@@ -448,6 +410,7 @@ void Scene::render() {
             for (const Bomb::BlastCell& cell : bomb.getBlastCells()) {
                 int type = cell.type;
                 if (type >= 0 && type < BLAST_TYPE_COUNT && explosionSprites[type] != NULL) {
+                    explosionSprites[type]->changeAnimation(bomb.getExplosionFrame());
                     explosionSprites[type]->setPosition(glm::vec2(
                         float(cell.x * map->getTileSize()),
                         float(cell.y * map->getTileSize())
@@ -457,23 +420,10 @@ void Scene::render() {
             }
         }
         else {
-            const glm::vec2 bombPosition(float(bomb.getX()), float(bomb.getY()));
-            int ms = bomb.getRemainingMs();
-
-            if (ms <= 500) {
-                const float offset = map->getTileSize() * 0.125f;
-                largeBombSprite->setPosition(bombPosition - glm::vec2(offset, offset));
-                largeBombSprite->render();
-            }
-            else if (ms <= 1500) {
-                const float offset = map->getTileSize() * 0.0625f;
-                mediumBombSprite->setPosition(bombPosition - glm::vec2(offset, offset));
-                mediumBombSprite->render();
-            }
-            else {
-                bombSprite->setPosition(bombPosition);
-                bombSprite->render();
-            }
+            const float pixel=map->getTileSize()/16.f;
+            bombSprite->changeAnimation(bomb.getBombFrame());
+            bombSprite->setPosition(glm::vec2(bomb.getX()-2.f*pixel,bomb.getY()-3.f*pixel));
+            bombSprite->render();
         }
     }
     for (Enemy* enemy : enemies) enemy->render();
@@ -484,15 +434,12 @@ void Scene::render() {
     texProgram.setUniformMatrix4f("projection",
         glm::ortho(0.f, float(SCREEN_WIDTH), float(SCREEN_HEIGHT), 0.f));
     HudInfo info;
-    info.lives = player->getLives();
-    info.maxLives = Player::MAX_LIVES;
+    info.spareLives = player->getSpareLives();
+    info.goldHeart = player->hasGoldHeart();
     info.secondsLeft = (timeLeftMs + 999) / 1000;
     info.enemiesLeft = int(enemies.size());
-    info.level = level;
     info.fireRange = player->getFireRange();
     info.bombCapacity = int(player->getBombCapacity());
-    info.invulnerable = invulnerableMode;
-    info.starSeconds = (player->getStarMs() + 999) / 1000;
     hud->render(info);
 }
 
@@ -526,4 +473,102 @@ void Scene::startMapEffectsTest() {
     player->setPosition(glm::vec2(28.f*32,12.f*32));
     bombs.emplace_back(28*32,12*32,32,0,1);
     bombs.emplace_back(5*32,22*32,32,0,1);
+}
+
+// Integration test reached only through the hidden --hud-test command line mode.
+void Scene::runHudTestStep(int step) {
+    if (step==0) {
+        player->resetStats();
+        invulnerableMode = false;
+        timeLeftMs = LEVEL_TIME_SECONDS*1000;
+        player->setPosition(map->getSpawn()+glm::vec2(64.f,0.f));
+        if (player->getSpareLives()!=2) throw std::runtime_error("HUD initial life count failed");
+    } else if (step==1) {
+        const glm::vec2 pos=player->getPosition();
+        items.push_back({int(pos.x)/map->getTileSize(),int(pos.y)/map->getTileSize(),ITEM_HEART,true});
+        pickUpItems();
+        if (!player->hasGoldHeart() || player->getLives()!=3)
+            throw std::runtime_error("Gold heart pickup added lives or failed to grant protection");
+    } else if (step==2) {
+        const glm::vec2 before=player->getPosition();
+        damagePlayer();
+        const glm::vec2 after=player->getPosition();
+        if (player->hasGoldHeart() || player->getLives()!=3 || before.x!=after.x || before.y!=after.y || player->canBeHurt())
+            throw std::runtime_error("Gold heart hit must keep the player in place and preserve all lives");
+    } else if (step==3) {
+        player->update(100,bombs); // Capture the invisible half of the blink cycle.
+    } else if (step==4) {
+        player->update(1900,bombs);
+        damagePlayer();
+        if (player->getSpareLives()!=1) throw std::runtime_error("First life loss must display 1");
+    } else if (step==5) {
+        player->update(2000,bombs);
+        damagePlayer();
+        if (player->getSpareLives()!=0 || player->getLives()!=1)
+            throw std::runtime_error("Last live attempt must display 0");
+    }
+}
+
+// Hidden integration check: uses the real Player update and Scene placement logic.
+void Scene::runBombCollisionTest() {
+    auto require=[](bool ok,const char* message) { if(!ok) throw std::runtime_error(message); };
+    auto& game=Game::instance();
+    auto move=[&](int direction,int frames,bool jump=false) {
+        game.keyReleased(GLFW_KEY_LEFT); game.keyReleased(GLFW_KEY_RIGHT); game.keyReleased(GLFW_KEY_UP);
+        if(direction) game.keyPressed(direction>0 ? GLFW_KEY_RIGHT : GLFW_KEY_LEFT);
+        if(jump) game.keyPressed(GLFW_KEY_UP);
+        for(int i=0;i<frames;++i) { player->update(8,bombs); if(i==0) game.keyReleased(GLFW_KEY_UP); }
+        game.keyReleased(GLFW_KEY_LEFT); game.keyReleased(GLFW_KEY_RIGHT);
+    };
+    const int tile=map->getTileSize(), x=20*tile, floorY=24*tile;
+    for(float offset : {-4.f,4.f,15.f}) {
+        bombs.clear();
+        player->setPosition(glm::vec2(x+offset,float(floorY)));
+        placeBomb();
+        require(bombs.size()==1 && bombs[0].getX()==x && bombs[0].getY()==floorY,"Bomb drifted to the adjacent tile");
+    }
+    bombs.clear(); bombs.emplace_back(x,floorY,tile);
+    player->setPosition(glm::vec2(float(x-tile),float(floorY)));
+    move(1,50);
+    require(player->getPosition().x==x-tile,"Player crossed the left side of a bomb");
+    player->setPosition(glm::vec2(float(x+tile),float(floorY)));
+    move(-1,50);
+    require(player->getPosition().x==x+tile,"Player crossed the right side of a bomb");
+
+    bombs.clear(); bombs.emplace_back(x,22*tile,tile);
+    player->setPosition(glm::vec2(float(x),float(floorY)));
+    move(0,1);
+    game.keyPressed(GLFW_KEY_UP);
+    bool bumped=false;
+    for(int i=0;i<100;++i) {
+        player->update(8,bombs);
+        game.keyReleased(GLFW_KEY_UP);
+        require(player->getBody().y>=23*tile,"Player jumped through a bomb overhead");
+        if(player->getBody().y==23*tile && player->getBody().vy==0) bumped=true;
+    }
+    require(bumped,"Bomb underside was not reached in the integration test");
+
+    bombs.clear(); bombs.emplace_back(x,23*tile,tile);
+    player->setPosition(glm::vec2(float(x),20.f*tile));
+    move(0,200);
+    require(player->getBody().grounded && player->getBody().y==22*tile,"Player did not land on a floating bomb");
+    move(0,200,true);
+    require(player->getBody().grounded && player->getBody().y==22*tile,"Player cannot jump from and land back on a bomb");
+
+    bombs.clear(); player->setPosition(glm::vec2(float(x),float(floorY)));
+    move(0,1); placeBomb();
+    move(1,70);
+    require(player->getPosition().x>=x+tile && !bombs[0].canOwnerExit(),"New bomb trapped the player or failed to become solid");
+    move(-1,100);
+    require(player->getPosition().x==x+tile,"Owner could re-enter a bomb after leaving");
+    resetPlayer();
+}
+
+// Hidden render test: three fuse sizes, growing/shrinking fire, original item icons.
+void Scene::startOriginalEffectsTest() {
+    originalEffectsTest=true;
+    invulnerableMode=true;
+    bombs.clear();
+    bombs.emplace_back(20*32,7*32,32,Bomb::DEFAULT_FUSE_MS,2);
+    for(int type=0;type<ITEM_TYPE_COUNT;++type) items.push_back({17+type,4,static_cast<ItemType>(type),true});
 }

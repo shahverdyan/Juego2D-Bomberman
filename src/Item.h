@@ -6,7 +6,7 @@
 enum ItemType {
     ITEM_FIRE_UP,  // +1 alcance de la explosión
     ITEM_BOMB_UP,  // +1 bomba simultánea
-    ITEM_HEART,    // recupera una vida (máximo Player::MAX_LIVES)
+    ITEM_HEART,    // corazón dorado: absorbe un impacto, sin sumar vidas
     ITEM_STAR,     // invulnerable durante Player::STAR_MS
     ITEM_TYPE_COUNT
 };

@@ -1,7 +1,7 @@
 #pragma once
 #include <algorithm>
 namespace view {
-    enum { COLUMNS=10, ROWS=9, WINDOW_WIDTH=640, HUD_HEIGHT=48,
+    enum { COLUMNS=10, ROWS=9, WINDOW_WIDTH=640, HUD_HEIGHT=32,
            WINDOW_HEIGHT=WINDOW_WIDTH*ROWS/COLUMNS+HUD_HEIGHT };
     struct Camera { float x,y,width,height; };
     inline Camera follow(float x, float y, int mapWidth, int mapHeight, int tileSize) {

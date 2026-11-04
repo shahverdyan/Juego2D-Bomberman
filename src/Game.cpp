@@ -69,3 +69,9 @@ bool Game::consumeKey(int key) {
 void Game::shutdown() { scene.shutdown(); }
 
 void Game::startMapEffectsTest() { scene.startMapEffectsTest(); }
+
+void Game::runHudTestStep(int step) { scene.runHudTestStep(step); }
+
+void Game::runBombCollisionTest() { scene.runBombCollisionTest(); }
+
+void Game::startOriginalEffectsTest() { scene.startOriginalEffectsTest(); }

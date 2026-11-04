@@ -63,9 +63,9 @@ void Player::init(const glm::ivec2 &tileMapPos, ShaderProgram &shaderProgram)
 	
 }
 
-bool Player::update(int deltaTime, const std::vector<Bomb>& bombs)
+bool Player::update(int deltaTime, std::vector<Bomb>& bombs)
 {
-    invulnerableMs = std::max(0, invulnerableMs - deltaTime);
+    health.update(deltaTime);
     starMs = std::max(0, starMs - deltaTime);
     auto& game = Game::instance();
     int direction = int(game.getKey(GLFW_KEY_RIGHT) || game.getKey(GLFW_KEY_D))
@@ -73,27 +73,19 @@ bool Player::update(int deltaTime, const std::vector<Bomb>& bombs)
     const bool placeBomb = game.consumeKey(GLFW_KEY_SPACE);
     bool jump = game.consumeKey(GLFW_KEY_UP);
     jump = game.consumeKey(GLFW_KEY_W) || jump;
+    // Respawning inside an existing bomb must also allow one safe exit.
+    for (Bomb& bomb : bombs) {
+        if (refreshBombExit) bomb.allowOwnerExit(body.x,body.y,body.width,body.height);
+        else bomb.updateOwnerExit(body.x,body.y,body.width,body.height);
+    }
+    refreshBombExit = false;
     movement::tick(body, direction, jump, deltaTime / 1000.f, map->getTileSize(),
-        [this](int x, int y) { return map->isSolid(x, y); },
-        [&bombs](movement::Body& playerBody, float previousY) {
-            bool foundPlatform = false;
-            float landingY = 0.f;
-            for (const Bomb& bomb : bombs) {
-                if (bomb.isExploding()) continue;
-                const float platformY = float(bomb.getY());
-                if (movement::crossesPlatform(playerBody, previousY,
-                        float(bomb.getX()), platformY, float(bomb.getTileSize())) &&
-                    (!foundPlatform || platformY < landingY)) {
-                    landingY = platformY;
-                    foundPlatform = true;
-                }
-            }
-            if (foundPlatform) {
-                playerBody.y = landingY - playerBody.height;
-                playerBody.vy = 0.f;
-                playerBody.grounded = true;
-            }
+        [this,&bombs](int x,int y) {
+            if (map->isSolid(x,y)) return true;
+            for (const Bomb& bomb : bombs) if (bomb.blocksPlayerTile(x,y)) return true;
+            return false;
         });
+    for (Bomb& bomb : bombs) bomb.updateOwnerExit(body.x,body.y,body.width,body.height);
     if (direction != 0) facingLeft = direction < 0;
     const int side = facingLeft ? 0 : 1;
     int anim = (direction ? MOVE_LEFT : STAND_LEFT) + side;
@@ -107,14 +99,13 @@ bool Player::update(int deltaTime, const std::vector<Bomb>& bombs)
 void Player::render()
 {
 	// Parpadeo mientras es invulnerable: se dibuja 100 ms sí, 100 ms no.
-	if (invulnerableMs > 0 && (invulnerableMs / 100) % 2 == 1) return;
+	if (!health.visible()) return;
 	sprite->render();
 }
 
 void Player::resetStats()
 {
-	lives = MAX_LIVES;
-	invulnerableMs = 0;
+	health.reset();
 	starMs = 0;
 	bombCapacity = 1;
 	fireRange = Bomb::DEFAULT_FIRE_RANGE;

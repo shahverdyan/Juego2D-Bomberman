@@ -56,6 +56,35 @@ Después compila en Visual Studio y ejecuta con Ctrl+F5. La compilación copia e
 El juego lee el `.txt`, por eso guardar solo el `.tmj` no cambia aún la partida.
 Si prefieres, guarda el editor y pide a Codex que lo importe.
 
+## Editar píxeles de los bloques
+
+La imagen compartida por Tiled y el juego es `src/images/tilesets/world1-atlas.png`.
+Mide 64x64 píxeles y contiene 4 columnas por 4 filas de bloques, todos de 16x16.
+Abre ese PNG en un editor de píxeles y activa una cuadrícula de 16x16. Usa lápiz
+de 1 píxel, sin suavizado; conserva 64x64, las posiciones y los colores que quieras mantener.
+La casilla de la esquina superior izquierda es el ID 1 del juego (ID 0 en Tiled).
+Cada fila sigue de izquierda a derecha. No añadas espacios entre bloques.
+
+Guarda el PNG y vuelve a abrir el mapa en Tiled para ver la imagen actualizada.
+No necesitas recolocar sus casillas: level01.tmj y los mapas que usen ese mismo atlas
+comparten los dibujos. Para verlo en el juego, cierra la partida, compila y ejecuta.
+Si solo has cambiado píxeles no hace falta ejecutar ActualizarMapa.cmd.
+
+El juego dibuja cada celda de 16x16 a 32x32 unidades y la ventana la amplía a 64x64
+píxeles. Un píxel del atlas ocupa 4x4 píxeles de pantalla. La colisión sigue ocupando
+la casilla completa y no depende de la transparencia o del dibujo.
+
+Para restaurar los recortes originales corregidos sin cambiar el diseño de ningún mapa:
+
+```
+python tools/build_world1.py --atlas-only
+```
+
+Esta opción sobrescribe el PNG y su catálogo, así que reemplaza las ediciones manuales
+de píxeles. También actualiza la vista general del nivel. El origen correcto de los
+recortes de 16x16 en la imagen fuente es (15,12); no se recorta ninguna fila ni se añade
+transparencia al pie de la cascada.
+
 Para actualizar el editor desde un `.txt` cambiado fuera de Tiled:
 
 ```

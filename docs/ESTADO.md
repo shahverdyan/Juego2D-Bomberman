@@ -1,3 +1,62 @@
+# Alineación de bloques y edición de píxeles (4 noviembre 2026)
+
+- Corregido origen del recorte del escenario de (15,13) a (15,12): dieciséis bloques
+  completos de 16x16, en el mismo atlas de 64x64 y con los mismos IDs.
+- Arbusto, cielo, tronco superior, plataformas, puerta, suelo base y pie de cascada
+  coinciden con las siete referencias aportadas. El pie tiene 16 filas opacas.
+- level01.tmj y level01.txt conservan sus bytes: el cambio de imagen se comparte
+  automáticamente con este mapa y cualquier otro que use el tileset World 1.
+- build_world1.py --atlas-only permite restaurar los recortes sin regenerar el mapa.
+  build_original_effects.py ya no sobrescribe el terreno al generar bombas y objetos.
+- Guía EDITAR_MAPAS.md ampliada con tamaño nativo, cuadrícula, archivo de píxeles
+  compartido y aplicación al juego.
+
+## Registro anterior
+
+# Recursos originales y animación (4 noviembre 2026)
+
+- Corregido pie de cascada: 15 filas de imagen más una transparente; sin césped en el borde.
+- Tres bombas originales, con centro/base fijos y pulso que acelera antes de detonar.
+- Explosión original ensamblada en siete tipos de piezas y tres estados, con crecimiento y retirada.
+- Animación basada en el tiempo de cada bomba; una bomba nueva no reinicia otras explosiones.
+- Fire Up, Bomb Up, corazón y objeto de invulnerabilidad usan los recuadros dorados solicitados.
+- Generadores actualizados: build_original_effects.py, build_items.py, build_world1.py y build_original_hud.py.
+- Se mantienen el mapa, las colisiones, los alcances y los efectos de los objetos.
+- Pruebas de assets y temporización de bombas superadas. Ver EFECTOS_ORIGINALES.md.
+
+## Registro anterior
+
+# Ajustes actuales: tiempo, HUD y bombas (4 noviembre 2026)
+
+- Cada nivel empieza con 4:00 (240 s), también al reiniciarlo.
+- El corazón dorado se dibuja a la izquierda de la cara de vidas; se conserva la cuenta 2/1/0.
+- La bomba usa la casilla que contiene el centro de la hitbox, no su esquina ni el borde adelantado.
+- Las bombas activas son sólidas para el jugador por arriba, ambos lados y debajo.
+- Al colocar una bomba dentro del personaje, se permite salir de ella una vez; después impide volver
+  a entrar. Saltar para salir permite aterrizar encima. La misma excepción evita atascarse si se reaparece dentro de una bomba.
+- Una bomba que ya está explotando deja de actuar como bloque; su fuego conserva el daño existente.
+- Pruebas CPU de colocación con pequeños desplazamientos a ambos lados, caras de colisión, salida del propietario y explosión.
+- Modo oculto --bomb-collision-test comprueba la Scene y el Player reales, no solo las funciones auxiliares.
+
+## Registro anterior
+
+# HUD y protección: estado actual (4 noviembre 2026)
+
+- HUD inferior rosa de una fila, con iconos originales extraídos de la hoja Overworld (Color).
+- Reloj + tiempo, cara + vidas 2/1/0, corazón dorado cuando está activo, T + enemigos,
+  bomba + capacidad y explosión + alcance. Números estilo 8x8 de la referencia.
+- Ventana 640x608: 10x9 bloques de juego (640x576) y barra inferior de 32 px.
+- El corazón dorado absorbe un impacto sin consumir vidas ni cambiar la posición.
+- Tras perderlo, parpadeo e inmunidad durante 2 s. No acumula corazones ni suma vidas.
+- El resto de power-ups y la invulnerabilidad por estrella/G se conservan.
+- Modelo CPU PlayerHealth.h y pruebas de salud; modo oculto --hud-test para QA integrada.
+- Ver docs/HUD.md para assets, reglas y verificación.
+- Verificados los ejecutables habituales build/Debug/Bomberman.exe y build/Release/Bomberman.exe: compilación, arranque y --hud-test correctos.
+- La prueba integrada recoge el corazón, recibe daño sin perder vidas ni cambiar posición, captura el parpadeo y comprueba los contadores 1 y 0.
+- La captura real con corazón coincide píxel a píxel con docs/hud-preview.png; los iconos conservan sus píxeles originales y los otros tres power-ups no cambiaron.
+
+## Registro anterior
+
 # Estado (3 noviembre 2026)
 
 ## Preparación
@@ -178,3 +237,17 @@ Evitar que dos chats editen simultáneamente los mismos archivos de esta carpeta
 - El usuario estaba lanzando el antiguo build/Debug/Bomberman.exe (19:29), mientras que los cambios se habían probado como BombermanMapTest.exe.
 - Se reconstruyó y enlazó el nombre habitual Bomberman.exe. Sus pruebas --smoke-test y --map-effects-test terminaron con código 0.
 - Iniciar sin depurar ya puede lanzar la versión actualizada sin elegir otra copia.
+
+## Verificación de estos ajustes
+- Bombas y movimiento: pruebas CPU superadas. Debug y Release compilados con el nombre habitual Bomberman.exe.
+- Arranque, prueba integrada de colocación/colisiones y HUD: código 0 en ambas configuraciones.
+
+## Verificación de recursos originales
+- Ejecutables habituales Debug y Release compilados y arrancados. Pruebas de colisiones, cascadas y secuencia gráfica original: código 0 en ambos.
+
+## Verificación de alineación de tiles
+- Las siete capturas coinciden píxel a píxel a resolución nativa. Los 16 tiles conservan 16x16 píxeles opacos de la fuente.
+- Regenerar bombas/objetos no sobrescribe el terreno. Pruebas de assets y conversión de Tiled superadas.
+- level01.tmj, level01.txt y los atlas de bombas, explosiones y objetos conservan sus hashes.
+- Debug y Release: compilación/copia de recursos, arranque y apertura de cascadas con código 0. Ambas salidas contienen el atlas actualizado.
+

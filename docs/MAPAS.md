@@ -1,8 +1,8 @@
 # Mapa actual: cámara y obstáculos (3 noviembre 2026)
 
 Para editar gráficamente, usa `src/levels/level01.tmj` con Tiled y lee EDITAR_MAPAS.md.
-La cámara enseña exactamente 10x9 bloques del mundo; el HUD ocupa su propia franja.
-Ventana 640x624: área de juego 640x576 (bloques de 64 px) + HUD de 48 px.
+La cámara enseña exactamente 10x9 bloques del mundo; el HUD ocupa su propia franja inferior.
+Ventana 640x608: área de juego 640x576 (bloques de 64 px) + HUD inferior de 32 px.
 
 Las cascadas son sólidas. Una explosión sobre la cabecera inicia una retracción de 1 s:
 el pie sube de forma continua y desaparecen los segmentos inferiores; quedan dos bloques sólidos.

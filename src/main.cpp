@@ -42,8 +42,11 @@ int main(int argc, char** argv)
     std::string directory(executable);
     directory = directory.substr(0, directory.find_last_of("/\\"));
     SetCurrentDirectoryA(directory.c_str());
+    const bool originalEffects = argc > 1 && std::string(argv[1]) == "--original-effects-test";
     const bool mapEffects = argc > 1 && std::string(argv[1]) == "--map-effects-test";
-    const bool smoke = mapEffects || (argc > 1 && std::string(argv[1]) == "--smoke-test");
+    const bool bombTest = argc > 1 && std::string(argv[1]) == "--bomb-collision-test";
+    const bool hudTest = argc > 1 && std::string(argv[1]) == "--hud-test";
+    const bool smoke = originalEffects || bombTest || hudTest || mapEffects || (argc > 1 && std::string(argv[1]) == "--smoke-test");
     if (smoke) freopen("smoke.log", "w", stdout);
     GLFWwindow* window;
 	double timePreviousFrame, currentTime;
@@ -81,6 +84,8 @@ int main(int argc, char** argv)
 	/* Init step of the game loop */
 	Game::instance().init();
     if (mapEffects) Game::instance().startMapEffectsTest();
+    if (originalEffects) Game::instance().startOriginalEffectsTest();
+    if (bombTest) Game::instance().runBombCollisionTest();
     timePreviousFrame = glfwGetTime();
     double accumulator = 0.0;
     const double fixedStep = 0.008; // 125 Hz; exact integer milliseconds for the lab API.
@@ -90,22 +95,24 @@ int main(int argc, char** argv)
         accumulator += std::min(0.25, currentTime - timePreviousFrame);
         timePreviousFrame = currentTime;
         glfwPollEvents();
-        if (mapEffects) { Game::instance().update(8); accumulator = 0; }
+        if (mapEffects || originalEffects) { Game::instance().update(8); accumulator = 0; }
+        if (hudTest) { Game::instance().runHudTestStep(frames); accumulator = 0; }
         while (accumulator >= fixedStep) {
             if (!Game::instance().update(8)) glfwSetWindowShouldClose(window, GLFW_TRUE);
             accumulator -= fixedStep;
         }
         Game::instance().render();
-        if (smoke && (mapEffects ? (frames==0 || frames==62 || frames==125) : frames==4)) {
+        const bool originalCapture = originalEffects && (frames==0 || frames==27 || frames==55 || frames==187 || frames==369 || frames==374 || frames==385 || frames==396 || frames==417 || frames==427 || frames==437);
+        if (smoke && (originalCapture || (!originalEffects && (hudTest || (mapEffects ? (frames==0 || frames==62 || frames==125) : frames==4))))) {
             std::vector<unsigned char> pixels(SCREEN_WIDTH * SCREEN_HEIGHT * 3);
             glReadPixels(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, GL_RGB, GL_UNSIGNED_BYTE, pixels.data());
-            std::ofstream capture(mapEffects ? ("waterfall-"+std::to_string(frames*8)+".ppm") : "smoke.ppm", std::ios::binary);
+            std::ofstream capture(originalEffects ? ("effects-"+std::to_string(frames*8)+".ppm") : hudTest ? ("hud-"+std::to_string(frames)+".ppm") : mapEffects ? ("waterfall-"+std::to_string(frames*8)+".ppm") : "smoke.ppm", std::ios::binary);
             capture << "P6\n" << SCREEN_WIDTH << " " << SCREEN_HEIGHT << "\n255\n";
             for (int y = SCREEN_HEIGHT - 1; y >= 0; --y)
                 capture.write(reinterpret_cast<char*>(pixels.data() + y * SCREEN_WIDTH * 3), SCREEN_WIDTH * 3);
         }
         glfwSwapBuffers(window);
-        if (smoke && ++frames >= (mapEffects ? 126 : 5)) break;
+        if (smoke && ++frames >= (originalEffects ? 438 : hudTest ? 6 : mapEffects ? 126 : 5)) break;
     }
     Game::instance().shutdown();
     if (smoke) std::cout << "SMOKE OK: resources, shaders, map and rendering loaded" << std::endl;

@@ -21,6 +21,7 @@
     <ClInclude Include="LevelData.h" />
     <ClInclude Include="ViewConfig.h" />
     <ClInclude Include="Player.h" />
+    <ClInclude Include="PlayerHealth.h" />
     <ClInclude Include="Scene.h" />
     <ClInclude Include="Shader.h" />
     <ClInclude Include="Shooter.h" />

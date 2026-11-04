@@ -10,7 +10,7 @@
       "name": "background",
       "source_rect": [
         47,
-        29,
+        28,
         16,
         16
       ]
@@ -20,7 +20,7 @@
       "name": "grass_left",
       "source_rect": [
         239,
-        45,
+        44,
         16,
         16
       ]
@@ -30,7 +30,7 @@
       "name": "grass_middle",
       "source_rect": [
         255,
-        45,
+        44,
         16,
         16
       ]
@@ -40,7 +40,7 @@
       "name": "grass_right",
       "source_rect": [
         319,
-        45,
+        44,
         16,
         16
       ]
@@ -50,7 +50,7 @@
       "name": "column_body",
       "source_rect": [
         95,
-        93,
+        92,
         16,
         16
       ]
@@ -60,7 +60,7 @@
       "name": "floor",
       "source_rect": [
         31,
-        237,
+        236,
         16,
         16
       ]
@@ -70,7 +70,7 @@
       "name": "waterfall_top",
       "source_rect": [
         127,
-        29,
+        28,
         16,
         16
       ]
@@ -80,7 +80,7 @@
       "name": "waterfall_middle",
       "source_rect": [
         127,
-        45,
+        44,
         16,
         16
       ]
@@ -90,7 +90,7 @@
       "name": "waterfall_bottom",
       "source_rect": [
         127,
-        125,
+        124,
         16,
         16
       ]
@@ -100,7 +100,7 @@
       "name": "foliage",
       "source_rect": [
         31,
-        29,
+        28,
         16,
         16
       ]
@@ -110,7 +110,7 @@
       "name": "border_left",
       "source_rect": [
         15,
-        29,
+        28,
         16,
         16
       ]
@@ -120,7 +120,7 @@
       "name": "border_right",
       "source_rect": [
         511,
-        29,
+        28,
         16,
         16
       ]
@@ -130,7 +130,7 @@
       "name": "border_top",
       "source_rect": [
         31,
-        13,
+        12,
         16,
         16
       ]
@@ -140,7 +140,7 @@
       "name": "border_top_left",
       "source_rect": [
         15,
-        13,
+        12,
         16,
         16
       ]
@@ -150,7 +150,7 @@
       "name": "border_top_right",
       "source_rect": [
         511,
-        13,
+        12,
         16,
         16
       ]
@@ -160,7 +160,7 @@
       "name": "door_marker",
       "source_rect": [
         431,
-        77,
+        76,
         16,
         16
       ]

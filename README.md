@@ -52,3 +52,9 @@ El ejecutable de esta fase no es todavía el paquete final de entrega.
 
 Edición gráfica: abre src/levels/level01.tmj en Tiled, guarda y ejecuta ActualizarMapa.cmd.
 Después cierra la partida anterior y compila. Guía completa: docs/EDITAR_MAPAS.md.
+
+HUD inferior original: tiempo, vidas 2/1/0, protección dorada, enemigos, bombas y alcance.
+El corazón absorbe un golpe sin sumar vidas y activa 2 s de parpadeo. Ver docs/HUD.md.
+
+Nivel: 4 minutos. Bombas sólidas por las cuatro caras; colocación por el centro del personaje.
+Al colocarla se permite salir una vez para no quedar encerrado, y después bloquea el paso.

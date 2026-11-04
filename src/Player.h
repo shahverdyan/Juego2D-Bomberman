@@ -5,12 +5,13 @@
 #include "Sprite.h"
 #include "TileMap.h"
 #include "Movement.h"
+#include "PlayerHealth.h"
 class Player {
 public:
     Player();
     ~Player();
     void init(const glm::ivec2& tileMapPos, ShaderProgram& shaderProgram);
-    bool update(int deltaTime, const std::vector<Bomb>& bombs);
+    bool update(int deltaTime, std::vector<Bomb>& bombs);
     void render();
     void setTileMap(TileMap* tileMap);
     void setPosition(const glm::vec2& pos);
@@ -22,13 +23,15 @@ public:
     void increaseBombCapacity() { ++bombCapacity; }
     void increaseFireRange() { ++fireRange; }
 
-    // Vidas: al perder una, el jugador queda invulnerable un rato (parpadea).
-    static const int MAX_LIVES = 3;
-    static const int HURT_INVULNERABLE_MS = 2000;
-    int getLives() const { return lives; }
-    bool canBeHurt() const { return invulnerableMs == 0 && starMs == 0; }
-    void loseLife() { --lives; invulnerableMs = HURT_INVULNERABLE_MS; }
-    void gainLife() { if (lives < MAX_LIVES) ++lives; }
+    static const int MAX_LIVES = PlayerHealth::MAX_LIVES;
+    int getLives() const { return health.lives; }
+    int getSpareLives() const { return health.spareLives(); }
+    bool hasGoldHeart() const { return health.goldHeart; }
+    bool canBeHurt() const { return health.canBeHurt() && starMs == 0; }
+    PlayerHealth::Damage takeHit() {
+        return canBeHurt() ? health.takeHit() : PlayerHealth::Damage::Ignored;
+    }
+    void collectGoldHeart() { health.collectGoldHeart(); }
 
     // Objeto estrella: invulnerable durante STAR_MS (sin parpadeo).
     static const int STAR_MS = 10000;
@@ -38,10 +41,10 @@ public:
     void resetStats();
 private:
     movement::Body body;
-    int lives = MAX_LIVES;
-    int invulnerableMs = 0;
+    PlayerHealth health;
     int starMs = 0;
     bool facingLeft = false;
+    bool refreshBombExit = true;
     std::size_t bombCapacity = 1;
     int fireRange = Bomb::DEFAULT_FIRE_RANGE;
     glm::ivec2 tileMapDispl;
