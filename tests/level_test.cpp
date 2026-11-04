@@ -15,7 +15,7 @@ int main() {
     assert(level.load(stream));
     assert(level.width == 48 && level.height == 26);
     auto solid = [&](int x, int y) { return level.solid(x, y); };
-    assert(!solid(9, 12)); // Waterfall decoration is traversable.
+    assert(solid(6, 22)); // Closed waterfall is physical.
     assert(solid(7, 16)); // Column below it is solid.
     assert(!solid(43, 7) && solid(43, 8)); // Door marker and its platform.
     assert(solid(-1, 2) && solid(level.width, 2));
@@ -31,6 +31,10 @@ int main() {
     std::istringstream badTile(invalid);
     assert(!bad.load(badTile));
 
+    // Check permanent terrain after the player has cleared bushes and opened gates.
+    for(int y=0;y<level.height;++y) for(int x=0;x<level.width;++x) level.destroyFoliage(x,y);
+    for(const auto& fall : level.waterfalls) level.hitWaterfallHead(fall.x,fall.top);
+    level.updateWaterfalls(1000);
     // Search actual physics trajectories between standing positions every four pixels.
     // This verifies a route from spawn to the upper marker without bombs or teleporting.
     using Point = std::pair<int,int>;
@@ -95,8 +99,8 @@ int main() {
     }
     auto target = index.find({43*32,7*32});
     assert(target != index.end() && visited[target->second]);
-    // Both sides of the lower route and the high loop can be visited.
-    for (Point point : {Point{11*32,18*32}, Point{26*32,17*32}, Point{38*32,14*32}, Point{6*32,9*32}, Point{2*32,17*32}, Point{30*32,3*32}}) {
+    // All regions and the three head-adjacent bomb ledges can be visited.
+    for (Point point : {Point{11*32,18*32}, Point{26*32,17*32}, Point{38*32,14*32}, Point{6*32,9*32}, Point{2*32,17*32}, Point{30*32,3*32}, Point{5*32,22*32}, Point{28*32,12*32}, Point{41*32,11*32}}) {
         assert(index.count(point) && visited[index[point]]);
     }
     std::vector<bool> canReturn(nodes.size());

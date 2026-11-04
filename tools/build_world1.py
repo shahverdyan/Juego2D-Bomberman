@@ -66,14 +66,14 @@ def main():
     # Coordinates are tile coordinates. Each ascent is at most two tiles (64 units).
     for rect in [
         (3, 5, 23, 23),           # First easy jump from the clearing.
-        (7, 18, 21, 22),          # Wide base; falling here lets the player try again.
+        (7, 18, 21, 22), (6, 6, 21, 21),          # Wide base; falling here lets the player try again.
         (7, 8, 11, 17),           # Western trunk of the arch.
         (5, 9, 10, 11),           # Overhanging canopy.
         (17, 18, 17, 21),         # Shorter eastern trunk: intentionally asymmetric.
         (10, 12, 19, 19), (14, 16, 17, 17),
         (10, 12, 15, 15), (14, 16, 13, 13),
         (10, 11, 11, 11),         # Branch back to the canopy.
-        (2, 4, 18, 18),           # Side alcove reached by dropping from above.
+        (2, 4, 18, 18), #           # Side alcove reached by dropping from above.
         (19, 21, 13, 13), (17, 19, 11, 11),
     ]:
         platform(*rect)
@@ -83,6 +83,7 @@ def main():
         (22, 34, 20, 21), (22, 23, 11, 20), (33, 34, 15, 20),
         (22, 30, 10, 11),
         (25, 27, 18, 18), (29, 31, 16, 16), (25, 26, 14, 14),
+        (28, 31, 13, 13),
         (32, 34, 12, 12),         # Gap at the roof edge leads into the well.
     ]:
         platform(*rect)
@@ -99,15 +100,15 @@ def main():
     for rect in [
         (36, 45, 21, 22), (44, 45, 10, 21), (43, 45, 8, 9),
         (38, 40, 19, 19), (41, 43, 17, 17),
-        (37, 39, 15, 15), (41, 43, 13, 13),
+        (37, 39, 15, 15), (41, 43, 12, 13),
         (37, 39, 11, 11), (40, 41, 10, 10),
         (35, 37, 23, 23),
     ]:
         platform(*rect)
 
     # Continuous lower passage allows recovery after falling from any of the ruins.
-    # Waterfalls hang from overhangs, behind terrain, rather than floating in open sky.
-    for x, top, bottom in [(9, 12, 20), (27, 12, 19), (40, 11, 20)]:
+    # Tutorial gate at the entrance plus two long falls with head-adjacent ledges.
+    for x, top, bottom in [(6, 22, 24), (27, 12, 19), (40, 11, 20)]:
         bg[top][x] = 7
         for y in range(top + 1, bottom):
             bg[y][x] = 8
@@ -140,6 +141,11 @@ def main():
                     tile = atlas.crop(((i % 4)*16, (i // 4)*16, (i % 4+1)*16, (i // 4+1)*16))
                     preview.alpha_composite(tile, (x*16, y*16))
     preview.save(ROOT / 'docs/level01-preview.png')
+    from tiled_map import export_tiled, import_tiled
+    editor = ROOT / 'src/levels/level01.tmj'
+    level_file = ROOT / 'src/levels/level01.txt'
+    export_tiled(level_file, editor)
+    import_tiled(editor, level_file)
     print('Generated level01: 48x26, three connected ruins, lower recovery passage and roof exit.')
 
 

@@ -67,3 +67,5 @@ bool Game::consumeKey(int key) {
     bool value = pressed[key]; pressed[key] = false; return value;
 }
 void Game::shutdown() { scene.shutdown(); }
+
+void Game::startMapEffectsTest() { scene.startMapEffectsTest(); }

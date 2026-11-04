@@ -32,6 +32,7 @@ public:
     ~Scene();
 
     void init();
+    void startMapEffectsTest();
     void update(int deltaTime);
     void render();
     void shutdown();
@@ -81,6 +82,7 @@ private:
     Hud* hud;
     int level;
     int timeLeftMs;
+    bool mapEffectsTest = false;
     bool invulnerableMode;  // tecla G
 
     ShaderProgram texProgram;

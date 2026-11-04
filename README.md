@@ -5,13 +5,13 @@ Compila y ejecuta con Ctrl+F5. Ambas configuraciones usan MSVC v145 y Windows SD
 
 Los recursos se copian automáticamente a `build/Debug` o `build/Release`.
 El ejecutable localiza los recursos junto a sí mismo, también al abrirlo desde el explorador.
-La aplicación es un prototipo de movimiento y lógica inicial de bombas; todavía no hay enemigos
-ni daño al jugador. La bomba y su explosión se muestran con fotogramas del atlas suministrado.
+La aplicación incluye bombas, enemigos, HUD, vidas, objetos y obstáculos interactivos del mapa.
+La cámara muestra 10x9 bloques de juego, con HUD independiente.
 
 - Flechas izquierda/derecha o A/D: moverse.
 - Espacio: colocar una bomba al pulsar (mecha de 3 s; mantener no repite).
 - Flecha arriba o W: saltar al pulsar; se puede aterrizar sobre bombas.
-- La explosión inicial tiene alcance 1 (una celda por dirección), se detiene ante terreno sólido y elimina follaje decorativo.
+- La explosión inicial tiene alcance 1 (una celda por dirección), se detiene ante terreno sólido y destruye arbustos físicos; una explosión en la cabecera de una cascada la retrae en 1 s.
 - La capacidad y el alcance tienen valores y métodos de mejora para futuros power-ups.
 - R: regresar al inicio.
 - Escape: salir.
@@ -26,7 +26,8 @@ ni daño al jugador. La bomba y su explosión se muestran con fotogramas del atl
 - `tests`: pruebas de movimiento y lógica de bombas sin OpenGL.
 - `build`: resultados generados, excluidos de Git.
 
-Consulta `docs/MAPAS.md` antes de editar el mapa. El terreno usa tiles originales de Pocket Bomberman; el personaje sigue siendo Bubble.
+Consulta `docs/MAPAS.md` antes de editar el mapa. El terreno usa tiles originales de Pocket Bomberman.
+Para editar con Tiled, abre src/levels/level01.tmj y consulta docs/EDITAR_MAPAS.md.
 
 ## Verificación
 
@@ -44,7 +45,10 @@ build\Debug\Bomberman.exe --smoke-test
 
 La última orden abre un contexto OpenGL oculto, renderiza cinco frames, guarda
 `smoke.log` y `smoke.ppm` junto al ejecutable y termina. No sustituye una prueba manual.
-La biblioteca SOIL suministrada no incluye sus antiguos PDB: el linker puede avisar
-de símbolos ausentes aunque el juego compile y funcione.
+SOIL se compila desde los fuentes C incluidos para evitar incompatibilidades de compilador.
+Las bibliotecas antiguas pueden producir avisos de tipos o símbolos sin impedir la ejecución.
 
 El ejecutable de esta fase no es todavía el paquete final de entrega.
+
+Edición gráfica: abre src/levels/level01.tmj en Tiled, guarda y ejecuta ActualizarMapa.cmd.
+Después cierra la partida anterior y compila. Guía completa: docs/EDITAR_MAPAS.md.

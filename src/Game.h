@@ -4,10 +4,11 @@
 
 #include <GLFW/glfw3.h>
 #include "Scene.h"
+#include "ViewConfig.h"
 
 
-#define SCREEN_WIDTH 640
-#define SCREEN_HEIGHT 480
+#define SCREEN_WIDTH view::WINDOW_WIDTH
+#define SCREEN_HEIGHT view::WINDOW_HEIGHT
 
 
 // Game is a singleton (a class with a single instance) that represents our whole application
@@ -29,6 +30,7 @@ public:
 
 	void init();
     void shutdown();
+    void startMapEffectsTest();
 	bool update(int deltaTime);
 	void render();
 

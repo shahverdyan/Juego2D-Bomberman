@@ -34,6 +34,19 @@ public:
         return true;
     }
 
+    // Include the first reactive obstacle, but stop fire before ordinary terrain.
+    template<class Solid, class Reactive>
+    static int blastDistance(int x, int y, int dx, int dy, int range, Solid solid, Reactive reactive) {
+        int distance=0;
+        for (int step=1; step<=range; ++step) {
+            const int tx=x+dx*step, ty=y+dy*step;
+            if (reactive(tx,ty)) { distance=step; break; }
+            if (solid(tx,ty)) break;
+            distance=step;
+        }
+        return distance;
+    }
+
     void setBlastCells(const std::vector<BlastCell>& cells) { blastCells = cells; }
     bool isExploding() const { return exploding; }
     bool isExpired() const { return exploding && explosionRemainingMs == 0; }

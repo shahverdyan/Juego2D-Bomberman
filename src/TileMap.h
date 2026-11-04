@@ -35,6 +35,11 @@ public:
 	bool isSolid(int x, int y) const;
 	bool destroyFoliage(const std::vector<glm::ivec2>& cells);
 	bool isFoliage(int x, int y) const;
+    bool isWaterfallHead(int x, int y) const { return level.isWaterfallHead(x,y); }
+    void hitWaterfallHeads(const std::vector<glm::ivec2>& cells);
+    void update(int deltaMs);
+    bool hasItemSpawns() const { return level.hasItemSpawns; }
+    const std::vector<LevelData::HiddenItem>& getItemSpawns() const { return level.hiddenItems; }
     glm::vec2 getSpawn() const { return glm::vec2(level.spawnX * level.tileSize, level.spawnY * level.tileSize); }
     glm::ivec2 getPixelSize() const { return glm::ivec2(level.width, level.height) * level.tileSize; }
 

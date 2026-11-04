@@ -202,6 +202,12 @@ void Scene::spawnEnemies() {
 // Objetos escondidos en arbustos del nivel 1 (provisional: posiciones fijas).
 // Cada uno: {columna, fila, tipo, revelado}. La celda debe ser un arbusto.
 void Scene::spawnItems() {
+    if (map->hasItemSpawns()) {
+        items.clear();
+        for (const auto& spawn : map->getItemSpawns())
+            items.push_back({spawn.x,spawn.y,static_cast<ItemType>(spawn.type),false});
+        return;
+    }
     items = {
         { 3, 24, ITEM_FIRE_UP, false },  // junto al inicio
         { 4, 22, ITEM_BOMB_UP, false },
@@ -258,6 +264,7 @@ void Scene::restartLevel() {
 
 void Scene::update(int deltaTime) {
     currentTime += deltaTime;
+    map->update(deltaTime);
 
     for (Bomb& bomb : bombs)
         if (bomb.update(deltaTime)) detonate(bomb);
@@ -279,7 +286,7 @@ void Scene::update(int deltaTime) {
         const std::size_t activeBombCount = std::count_if(bombs.begin(), bombs.end(),
             [](const Bomb& bomb) { return !bomb.isExploding(); });
 
-        if (!alreadyPlaced && player->canPlaceBomb(activeBombCount)) {
+        if (!map->isSolid(bombX / tileSize, bombY / tileSize) && !alreadyPlaced && player->canPlaceBomb(activeBombCount)) {
             if (activeBombCount == 0) {
                 for (int i = 0; i < BLAST_TYPE_COUNT; ++i) {
                     explosionSprites[i]->changeAnimation(0);
@@ -322,13 +329,9 @@ void Scene::update(int deltaTime) {
 
     const glm::vec2 pos = player->getPosition();
     const glm::ivec2 size = map->getPixelSize();
-    float cx = std::max(0.f, std::min(pos.x + 16.f - SCREEN_WIDTH / 2.f, float(size.x - SCREEN_WIDTH)));
-    // El HUD tapa la franja superior: la cámara se centra en la zona visible
-    // y puede subir Hud::HEIGHT por encima del mapa para ver la primera fila.
-    const float visibleCenterY = (Hud::HEIGHT + SCREEN_HEIGHT) / 2.f;
-    float cy = std::max(-float(Hud::HEIGHT),
-        std::min(pos.y + 16.f - visibleCenterY, float(size.y - SCREEN_HEIGHT)));
-    projection = glm::ortho(cx, cx + SCREEN_WIDTH, cy + SCREEN_HEIGHT, cy);
+    auto camera = view::follow(pos.x,pos.y,size.x,size.y,map->getTileSize());
+    if (mapEffectsTest) camera = view::follow(28.f*32,15.f*32,size.x,size.y,map->getTileSize());
+    projection = glm::ortho(camera.x,camera.x+camera.width,camera.y+camera.height,camera.y);
 }
 
 void Scene::detonate(Bomb& bomb) {
@@ -353,13 +356,9 @@ void Scene::detonate(Bomb& bomb) {
         int dx = direction[0];
         int dy = direction[1];
 
-        int maxSteps = 0;
-        for (int step = 1; step <= bomb.getFireRange(); ++step) {
-            int x = centerX + dx * step;
-            int y = centerY + dy * step;
-            if (map->isSolid(x, y)) break;
-            maxSteps = step;
-        }
+        const int maxSteps = Bomb::blastDistance(centerX,centerY,dx,dy,bomb.getFireRange(),
+            [this](int x,int y) { return map->isSolid(x,y); },
+            [this](int x,int y) { return map->isFoliage(x,y) || map->isWaterfallHead(x,y); });
 
         for (int step = 1; step <= maxSteps; ++step) {
             int x = centerX + dx * step;
@@ -392,6 +391,7 @@ void Scene::detonate(Bomb& bomb) {
         for (const glm::ivec2& cell : affectedCells)
             if (cell.x == item.tileX && cell.y == item.tileY) item.revealed = true;
     }
+    map->hitWaterfallHeads(affectedCells);
     map->destroyFoliage(affectedCells);
     bomb.setBlastCells(blastCells);
 }
@@ -424,6 +424,7 @@ void Scene::killEnemiesInBlast() {
 }
 
 void Scene::render() {
+    glViewport(0,0,SCREEN_WIDTH,SCREEN_HEIGHT-Hud::HEIGHT);
     glm::mat4 modelview;
 
     texProgram.use();
@@ -478,7 +479,8 @@ void Scene::render() {
     for (Enemy* enemy : enemies) enemy->render();
     player->render();
 
-    // HUD en coordenadas de pantalla, encima de todo.
+    glViewport(0,0,SCREEN_WIDTH,SCREEN_HEIGHT);
+    // HUD en su propia franja, fuera de las nueve filas de juego.
     texProgram.setUniformMatrix4f("projection",
         glm::ortho(0.f, float(SCREEN_WIDTH), float(SCREEN_HEIGHT), 0.f));
     HudInfo info;
@@ -516,4 +518,12 @@ void Scene::initShaders() {
     }
     vShader.free();
     fShader.free();
+}
+// Deterministic hidden rendering test, requested through --map-effects-test only.
+void Scene::startMapEffectsTest() {
+    mapEffectsTest = true;
+    invulnerableMode = true;
+    player->setPosition(glm::vec2(28.f*32,12.f*32));
+    bombs.emplace_back(28*32,12*32,32,0,1);
+    bombs.emplace_back(5*32,22*32,32,0,1);
 }

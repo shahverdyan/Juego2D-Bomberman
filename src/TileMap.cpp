@@ -64,61 +64,60 @@ bool TileMap::loadLevel(const string &levelFile)
 
 bool TileMap::isSolid(int x, int y) const { return level.solid(x, y); }
 
-// Arbusto (tile 10) en el fondo o en el primer plano.
-bool TileMap::isFoliage(int x, int y) const
-{
-    if (x < 0 || y < 0 || x >= level.width || y >= level.height) return false;
-    const size_t index = size_t(y) * level.width + x;
-    return level.background[index] == 10 || level.foreground[index] == 10;
-}
+bool TileMap::isFoliage(int x, int y) const { return level.isFoliage(x,y); }
 
-bool TileMap::destroyFoliage(const std::vector<glm::ivec2>& cells)
-{
-    bool destroyed = false;
-    for (const glm::ivec2& cell : cells) {
-        if (cell.x < 0 || cell.y < 0 || cell.x >= level.width || cell.y >= level.height)
-            continue;
-        const size_t index = size_t(cell.y) * level.width + cell.x;
-        if (level.background[index] == 10) {
-            level.background[index] = 1;
-            destroyed = true;
-        }
-        if (level.foreground[index] == 10) {
-            level.foreground[index] = 0;
-            destroyed = true;
-        }
-    }
-    if (destroyed) prepareArrays(mapOrigin, *shaderProgram);
-    return destroyed;
+bool TileMap::destroyFoliage(const std::vector<glm::ivec2>& cells) {
+    bool changed = false;
+    for (const auto& cell : cells) changed = level.destroyFoliage(cell.x,cell.y) || changed;
+    if (changed) prepareArrays(mapOrigin, *shaderProgram);
+    return changed;
+}
+void TileMap::hitWaterfallHeads(const std::vector<glm::ivec2>& cells) {
+    for (const auto& cell : cells) level.hitWaterfallHead(cell.x,cell.y);
+}
+void TileMap::update(int deltaMs) {
+    if (level.updateWaterfalls(deltaMs)) prepareArrays(mapOrigin, *shaderProgram);
 }
 
 void TileMap::prepareArrays(const glm::vec2 &minCoords, ShaderProgram &program)
 {
     vector<float> vertices;
     nTiles = 0;
-    // Draw the full background first, then foreground. Both use the same atlas.
-    for (const auto* layer : { &level.background, &level.foreground }) {
-        for (int y = 0; y < level.height; ++y) {
-            for (int x = 0; x < level.width; ++x) {
-                int tile = (*layer)[y * level.width + x];
-                if (!tile) continue;
-                ++nTiles;
-                const float px = minCoords.x + x * level.tileSize;
-                const float py = minCoords.y + y * level.tileSize;
-                const float size = float(level.blockSize);
-                const int column = (tile - 1) % level.atlasColumns;
-                const int row = (tile - 1) / level.atlasColumns;
-                // Exact cell boundaries and nearest filtering preserve original pixels.
-                const float u0 = float(column) / level.atlasColumns;
-                const float v0 = float(row) / level.atlasRows;
-                const float u1 = float(column + 1) / level.atlasColumns;
-                const float v1 = float(row + 1) / level.atlasRows;
-                const float quad[] = {
-                    px,py,u0,v0, px+size,py,u1,v0, px+size,py+size,u1,v1,
-                    px,py,u0,v0, px+size,py+size,u1,v1, px,py+size,u0,v1
-                };
-                vertices.insert(vertices.end(), quad, quad + 24);
+    auto quad = [&](int tile, float x, float y, float height = 1.f) {
+        if (!tile || height <= 0.f) return;
+        ++nTiles;
+        const float px = minCoords.x + x * level.tileSize;
+        const float py = minCoords.y + y * level.tileSize;
+        const float size = float(level.blockSize);
+        const int column = (tile-1) % level.atlasColumns;
+        const int row = (tile-1) / level.atlasColumns;
+        const float u0 = float(column) / level.atlasColumns;
+        const float v0 = float(row) / level.atlasRows;
+        const float u1 = float(column+1) / level.atlasColumns;
+        const float v1 = (row+height) / level.atlasRows;
+        const float bottom = py + size*height;
+        const float points[] = {
+            px,py,u0,v0, px+size,py,u1,v0, px+size,bottom,u1,v1,
+            px,py,u0,v0, px+size,bottom,u1,v1, px,bottom,u0,v1
+        };
+        vertices.insert(vertices.end(), points, points+24);
+    };
+    for (int front = 0; front < 2; ++front) {
+        const auto& layer = front ? level.foreground : level.background;
+        for (int y=0; y<level.height; ++y) for (int x=0; x<level.width; ++x) {
+            // Replace the original waterfall column with its animated geometry.
+            if (level.isWaterfallSourceTile(x,y,front != 0)) {
+                if (!front) quad(1,float(x),float(y));
+                continue;
             }
+            quad(layer[y*level.width+x],float(x),float(y));
+        }
+        for (const auto& fall : level.waterfalls) if (fall.foreground == (front != 0)) {
+            quad(7,float(fall.x),float(fall.top));
+            const float foot = fall.footRow();
+            for (int y=fall.top+1; y<foot; ++y)
+                quad(8,float(fall.x),float(y),std::min(1.f,foot-y));
+            quad(9,float(fall.x),foot);
         }
     }
     if (vao == 0) glGenVertexArrays(1, &vao);

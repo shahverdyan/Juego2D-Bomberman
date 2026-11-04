@@ -1,6 +1,7 @@
 #pragma once
 #include <string>
 #include "Sprite.h"
+#include "ViewConfig.h"
 
 // Datos que muestra el HUD. La Scene los rellena en cada fotograma.
 struct HudInfo {
@@ -18,7 +19,7 @@ struct HudInfo {
 // Se dibuja en coordenadas de pantalla (la Scene cambia la proyección antes).
 class Hud {
 public:
-    static const int HEIGHT = 48;
+    static const int HEIGHT = view::HUD_HEIGHT;
 
     Hud() {}
     ~Hud();

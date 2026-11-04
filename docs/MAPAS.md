@@ -1,4 +1,29 @@
-# Nivel 1: mundo del bosque
+# Mapa actual: cámara y obstáculos (3 noviembre 2026)
+
+Para editar gráficamente, usa `src/levels/level01.tmj` con Tiled y lee EDITAR_MAPAS.md.
+La cámara enseña exactamente 10x9 bloques del mundo; el HUD ocupa su propia franja.
+Ventana 640x624: área de juego 640x576 (bloques de 64 px) + HUD de 48 px.
+
+Las cascadas son sólidas. Una explosión sobre la cabecera inicia una retracción de 1 s:
+el pie sube de forma continua y desaparecen los segmentos inferiores; quedan dos bloques sólidos.
+No hace falta tocar la cabecera con el cuerpo de la bomba: la activa su explosión.
+
+| Cascada | Cabecera (columna,fila) | Bomba al lado (columna,fila) |
+|---|---|---|
+| Entrada | 6,22 | 5,22 |
+| Central | 27,12 | 28,12 |
+| Este | 40,11 | 41,11 |
+
+Coordenadas desde cero. Hay plataformas de apoyo en las casillas de bomba.
+Los arbustos son sólidos y destructibles: el fuego incluye el primer arbusto y se detiene allí.
+Destruirlo libera su colisión y revela el objeto oculto que configuró el compañero.
+Los cuatro objetos iniciales permanecen en 3,24; 4,22; 11,20; 15,16.
+
+El formato TILEMAP2 y las dimensiones 48x26 se conservan. Añadida sección opcional ITEMS,
+con filas `columna fila tipo`, donde tipo es 0=Fire Up, 1=Bomb Up, 2=corazón, 3=estrella.
+El .tmj lleva capas BACKGROUND, FOREGROUND, COLLISION y OBJECTS.
+
+# Referencia del diseño anterior
 
 El mapa activo es `src/levels/level01.txt`. Conserva 48 x 26 celdas, pero el diseño
 es asimétrico, con formas huecas inspiradas en las estructuras del original:
@@ -20,7 +45,7 @@ La distribución se puede recorrer con las físicas actuales, sin depender de bo
 - Se conservan exactamente los píxeles de 16 tiles de 16 x 16; se dibujan a 32 x 32 con filtro nearest.
 - Se excluyen la firma y la ilustración de la parte inferior de la imagen. Se conservan en el original.
 - El rip suministrado está firmado por Fret & Woppet; juego de Hudson Soft. Mantener estos créditos en la entrega.
-- El personaje sigue siendo el provisional de Bubble. Las cascadas son estáticas y decorativas.
+- El personaje sigue siendo el provisional de Bubble. Las cascadas ahora tienen colisión y animación de apertura.
 - La puerta del recorrido superior es un marcador gráfico; todavía no cambia de nivel.
 
 ## Formato TILEMAP2

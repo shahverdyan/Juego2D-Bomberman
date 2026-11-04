@@ -140,15 +140,41 @@ Las cascadas y el marcador de puerta son decorativos, todavía sin animación ni
 - Actualizado el test para que incluya caminar fuera de una plataforma y caer como acción válida.
 - Compilaciones Debug y Release y pruebas de arranque oculto correctas en la nueva raíz Bomberman. Solo avisos conocidos de símbolos SOIL.
 
+## Pulido del mapa y edición gráfica (3 noviembre)
+
+- Cámara 10x9 bloques de mundo, HUD fuera del área de juego; ventana 640x624.
+- Arbustos sólidos, destruibles con la explosión, liberan colisión y mantienen sus power-ups.
+- El alcance incluye el primer arbusto o cabecera de cascada aunque sean sólidos, y se detiene allí.
+- Cascadas detectadas por secuencias 7/8.../9; bloquean hasta que su pie se retrae durante 1000 ms.
+- Tras abrir, cabecera y pie quedan adyacentes y físicos. Reiniciar el nivel restaura las cascadas.
+- Apoyos junto a las tres cabeceras; primera cascada al lado del comienzo.
+- Tiled: src/levels/level01.tmj, conversor tools/tiled_map.py, guía docs/EDITAR_MAPAS.md.
+- ITEMS opcional en el formato: mantiene los cuatro objetos y permite moverlos con puntos en Tiled.
+- Prueba de terreno tras abrir obstáculos: rutas y regreso al inicio; 1432 posiciones muestreadas.
+- Pruebas CPU de colisión, destrucción, rango del fuego, apertura de cascadas, reinicio y cámara.
+- Pruebas originales de movimiento y bombas superadas.
+- Tiled: ida y vuelta sin cambios, movimiento conjunto de arbusto/objeto y rechazo de datos inválidos.
+- Debug y Release compilan y arrancan. Debug se comprobó como BombermanMapTest.exe porque la partida
+  abierta bloqueaba Bomberman.exe; hay que cerrar esa partida antes de compilar el nombre habitual.
+- Capturas reales de --map-effects-test revisadas en 0, 496 y 1000 ms: retracción visible y dos bloques al final.
+- SOIL Release precompilada era incompatible (C1047). Se compilan sus cuatro fuentes C incluidos con
+  el mismo compilador del proyecto; no se modifica la biblioteca fuente. Persisten avisos heredados
+  de tipos numéricos y del runtime estático de GLEW.
+- ActualizarMapa.cmd permite convertir el .tmj guardado con doble clic.
+
 ## Próximo paso
 
-Probar manualmente el alcance de la explosión, el bloqueo por terreno y la destrucción visual del follaje.
-Añadir daño, bloques destructibles y recogida de power-ups.
-Sustituir el personaje provisional cuando se disponga de su spritesheet. El mapa todavía
-no tiene enemigos ni condiciones para abrir la puerta, y no constituye por sí solo un nivel completo del enunciado.
+Probar manualmente las cascadas, los arbustos y el zoom. Las bombas, los dos tipos de enemigos,
+el HUD, las vidas y la recogida de objetos del compañero siguen integrados.
+Continuar con los requisitos pendientes (tercer enemigo, pantallas, cinco niveles, jefe y polish).
 
 ## Trabajo entre chats
 
 Un chat por fase o bloque importante. Leer AGENTS.md, este archivo y REQUISITOS.md
 al comenzar. No asumir que un chat nuevo recuerda toda la conversación anterior.
 Evitar que dos chats editen simultáneamente los mismos archivos de esta carpeta.
+
+## Corrección del ejecutable de Visual Studio (3 noviembre)
+- El usuario estaba lanzando el antiguo build/Debug/Bomberman.exe (19:29), mientras que los cambios se habían probado como BombermanMapTest.exe.
+- Se reconstruyó y enlazó el nombre habitual Bomberman.exe. Sus pruebas --smoke-test y --map-effects-test terminaron con código 0.
+- Iniciar sin depurar ya puede lanzar la versión actualizada sin elegir otra copia.

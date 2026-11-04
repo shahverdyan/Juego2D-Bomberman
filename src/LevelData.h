@@ -1,4 +1,6 @@
 #pragma once
+#include <algorithm>
+#include <cmath>
 #include <istream>
 #include <sstream>
 #include <string>
@@ -12,8 +14,76 @@ struct LevelData {
     std::vector<int> background, foreground;
     std::vector<unsigned char> collision;
 
+    struct Waterfall {
+        int x, top, bottom;
+        bool foreground;
+        int openingMs = -1; // -1 closed, 0..1000 retracting, 1000 open.
+        float footRow() const {
+            const float progress = std::max(0, openingMs) / 1000.f;
+            return bottom - (bottom - top - 1) * progress;
+        }
+        bool isHead(int tx, int ty) const { return tx == x && ty == top; }
+    };
+    std::vector<Waterfall> waterfalls;
+    struct HiddenItem { int x,y,type; };
+    std::vector<HiddenItem> hiddenItems;
+    bool hasItemSpawns = false;
+
+    bool inBounds(int x, int y) const { return x >= 0 && y >= 0 && x < width && y < height; }
+    bool isFoliage(int x, int y) const {
+        if (!inBounds(x,y)) return false;
+        const int i = y * width + x;
+        return background[i] == 10 || foreground[i] == 10;
+    }
     bool solid(int x, int y) const {
-        return x < 0 || y < 0 || x >= width || y >= height || collision[y * width + x] != 0;
+        if (!inBounds(x,y)) return true;
+        if (collision[y * width + x] || isFoliage(x,y)) return true;
+        for (const auto& fall : waterfalls)
+            if (x == fall.x && y >= fall.top && y <= int(std::ceil(fall.footRow()))) return true;
+        return false;
+    }
+    bool isWaterfallHead(int x, int y) const {
+        for (const auto& fall : waterfalls) if (fall.isHead(x,y)) return true;
+        return false;
+    }
+    bool isWaterfallSourceTile(int x, int y, bool front) const {
+        for (const auto& fall : waterfalls)
+            if (fall.foreground == front && fall.x == x && y >= fall.top && y <= fall.bottom) return true;
+        return false;
+    }
+    void findWaterfalls() {
+        waterfalls.clear();
+        for (int front = 0; front < 2; ++front) {
+            const auto& cells = front ? foreground : background;
+            for (int y = 0; y < height; ++y) for (int x = 0; x < width; ++x) {
+                if (cells[y*width+x] != 7) continue;
+                int end = y+1;
+                while (end < height && cells[end*width+x] == 8) ++end;
+                if (end < height && cells[end*width+x] == 9)
+                    waterfalls.push_back({x,y,end,front != 0,-1});
+            }
+        }
+    }
+    bool hitWaterfallHead(int x, int y) {
+        for (auto& fall : waterfalls) if (fall.isHead(x,y) && fall.openingMs < 0) {
+            fall.openingMs = 0; return true;
+        }
+        return false;
+    }
+    bool updateWaterfalls(int deltaMs) {
+        bool changed = false;
+        for (auto& fall : waterfalls) if (fall.openingMs >= 0 && fall.openingMs < 1000 && deltaMs > 0) {
+            fall.openingMs = std::min(1000, fall.openingMs + deltaMs); changed = true;
+        }
+        return changed;
+    }
+    bool destroyFoliage(int x, int y) {
+        if (!isFoliage(x,y)) return false;
+        const int i = y*width+x;
+        if (background[i] == 10) background[i] = 1;
+        if (foreground[i] == 10) foreground[i] = 0;
+        collision[i] = 0;
+        return true;
     }
 
     bool load(std::istream& input) {
@@ -59,11 +129,25 @@ struct LevelData {
                 collision.push_back(static_cast<unsigned char>(c - '0'));
             }
         }
+        findWaterfalls();
         // The current player is 32x32; reject a spawn inside terrain or outside the map.
         const int span = (32 + tileSize - 1) / tileSize;
         for (int y = spawnY; y < spawnY + span; ++y)
             for (int x = spawnX; x < spawnX + span; ++x)
                 if (solid(x, y)) return false;
+        input >> std::ws;
+        if (input.peek() != std::char_traits<char>::eof()) {
+            int count;
+            if (!(input >> tag >> count) || tag != "ITEMS" || count < 0 || count > width*height) return false;
+            hasItemSpawns = true;
+            for (int i=0; i<count; ++i) {
+                HiddenItem item;
+                if (!(input >> item.x >> item.y >> item.type) || item.type < 0 || item.type > 3 || !isFoliage(item.x,item.y)) return false;
+                hiddenItems.push_back(item);
+            }
+            input >> std::ws;
+            if (input.peek() != std::char_traits<char>::eof()) return false;
+        }
         return true;
     }
 };
