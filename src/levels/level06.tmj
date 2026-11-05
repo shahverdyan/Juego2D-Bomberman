@@ -9,7 +9,7 @@
   "tilewidth": 16,
   "tileheight": 16,
   "nextlayerid": 5,
-  "nextobjectid": 4,
+  "nextobjectid": 5,
   "layers": [
     {
       "id": 1,
@@ -368,6 +368,27 @@
               "value": 1
             }
           ]
+        },
+        {
+          "id": 4,
+          "name": "Boss",
+          "type": "enemy",
+          "point": true,
+          "x": 64,
+          "y": 16,
+          "rotation": 0,
+          "properties": [
+            {
+              "name": "enemyType",
+              "type": "int",
+              "value": 3
+            },
+            {
+              "name": "facingLeft",
+              "type": "bool",
+              "value": false
+            }
+          ]
         }
       ]
     }
@@ -382,6 +403,11 @@
       "name": "gameAtlas",
       "type": "string",
       "value": "images/tilesets/world1-atlas.png"
+    },
+    {
+      "name": "useMapEnemies",
+      "type": "bool",
+      "value": true
     }
   ],
   "tilesets": [

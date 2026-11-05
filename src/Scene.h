@@ -49,9 +49,11 @@ public:
     // El menú y las pantallas usan el mismo shader que la partida.
     ShaderProgram& getShaderProgram() { return texProgram; }
 
-    // Niveles 1..LEVEL_COUNT, en levels/levelNN.txt.
-    static const int LEVEL_COUNT = 5;
-    static const int BOSS_LEVEL = LEVEL_COUNT;  // el último nivel es la sala del jefe
+    // Niveles 1..LEVEL_COUNT, en levels/levelNN.txt. Los cinco primeros se eligen en la
+    // selección de nivel; el 6 es la sala del jefe, a la que se llega tras superar el 5.
+    static const int LEVEL_COUNT = 6;
+    // ¿El nivel cargado tiene jefe? (lo indica su sección ENEMIES)
+    bool isBossLevel() const { return bossLevel; }
     static std::string levelFile(int number);
     static bool levelExists(int number);
     // Partida nueva desde la selección de nivel: jugador con sus valores iniciales.
@@ -74,7 +76,7 @@ private:
     void detonate(Bomb& bomb);
     void placeBomb();
     void spawnEnemies();
-    void spawnBoss();
+    void spawnBoss(int tileX, int tileY);
     static Texture* loadSpriteTexture(const std::string& file);  // con filtro nearest
     void spawnItems();
     void pickUpItems();
@@ -109,6 +111,7 @@ private:
     Texture* bossFireballTexture;
     Texture* statueTexture;
     Boss* boss;  // el jefe del último nivel (también está en enemies); NULL si no hay
+    bool bossLevel = false;  // el nivel tiene jefe: la victoria llega sola al vencerlo
     int victoryDelayMs = -1;  // cuenta atrás tras vencer al jefe; -1 si no ha empezado
 
     // Objetos escondidos en arbustos (Fire Up, Bomb Up, corazón, estrella).

@@ -1,3 +1,28 @@
+# Niveles desde archivo, teclas 1-5 y jefe en el nivel 6 (6 noviembre 2026)
+
+- Teclas 1-5: cargan ese nivel desde cualquier pantalla (aunque esté bloqueado, y lo desbloquean). Desde un menú
+  empiezan partida nueva; jugando conservan vidas y mejoras. Si el nivel aún no existe, no hacen nada.
+- Sin posiciones fijas en el código: se han borrado los enemigos de Forest de `Scene::spawnEnemies` y los objetos
+  de `Scene::spawnItems`. `level01.txt` tiene ahora su sección `ENEMIES` (las mismas 6 posiciones).
+- El jefe es un enemigo más del archivo: tipo 3 en `ENEMIES` (`LevelData::EnemyKind::Boss`, también en
+  `tools/tiled_map.py`). `Scene::spawnBoss(x, y)` lo crea en esa casilla y marca `isBossLevel()`, que usan la
+  música del jefe y la victoria automática. Desaparece `Scene::BOSS_LEVEL`.
+- La sala del jefe pasa de `level05` a `level06` (`git mv`; `tools/build_boss_arena.py` también escribe level06
+  y genera la misma salida). `Scene::LEVEL_COUNT` = 6; la selección sigue con 5 botones, así que al 6 solo se
+  llega superando el anterior. Mientras falten los niveles 3-5, `Game::nextLevel()` los salta: Ocean → jefe.
+- Ojo: la compilación copia recursos pero no borra; se han quitado a mano los `level05.*` viejos de `build/`.
+- Verificado: Debug y Release compilan sin avisos del juego; cinco pruebas ocultas con código 0; tests CPU y
+  `tests/tiled_map_test.py` PASS; ida y vuelta por Tiled sin cambios en level01 y level06. Capturas con teclas
+  simuladas (código temporal retirado): 1 → Forest con 6 enemigos, 2 → Ocean con 5, y (6 habilitada solo en la
+  prueba) → jefe en su casilla atacando.
+
+# Revisión tras la integración (5 noviembre 2026)
+
+- Rama main (merge c16585a): Debug y Release compilan sin avisos en el código del juego; las cinco pruebas
+  ocultas dan código 0 en ambos; arranque real sin avisos de audio.
+- Pendiente obligatorio: niveles 3 (Wind) y 4 (Cloud); teclas 1-5 para cargar niveles (hecho después, arriba).
+- Pendiente de entrega: info.txt, binario autónomo, proyecto compilable, demo.avi y NomCognoms.zip.
+
 # Integración de aleks y cristian
 
 - Se combinan los enemigos y objetos de los mapas de aleks con la carga especial del jefe en el nivel 5. Al reaparecer se restauran el reloj de 4:00 y el estado del encuentro.

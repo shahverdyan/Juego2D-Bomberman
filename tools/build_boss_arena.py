@@ -1,11 +1,11 @@
-"""Genera la arena provisional del jefe: src/levels/level05.txt (y level05.tmj).
+"""Genera la arena provisional del jefe: src/levels/level06.txt (y level06.tmj).
 
 Sala cerrada de 10x9 tiles (una sola pantalla, como las salas de jefe de Game
 Boy) con los tiles del mundo 1: suelo abajo, dos plataformas para esquivar, un
 arbusto con Fire Up y otro con Bomb Up, y el marcador de la puerta en el centro
-del suelo (la puerta se abre al vencer al jefe). Es provisional: se puede rediseñar en Tiled abriendo level05.tmj y
+del suelo (la puerta se abre al vencer al jefe). Es provisional: se puede rediseñar en Tiled abriendo level06.tmj y
 convirtiéndolo con tools/tiled_map.py to-game. Ojo: volver a ejecutar este
-script sobrescribe level05.txt y level05.tmj.
+script sobrescribe level06.txt y level06.tmj.
 
 Uso: python tools/build_boss_arena.py
 """
@@ -27,6 +27,7 @@ FIRE_UP, BOMB_UP = 0, 1
 PLATFORMS = [(1, 5, 2), (7, 5, 2)]        # (columna, fila, longitud)
 BUSHES = [(1, 4, FIRE_UP), (8, 4, BOMB_UP)]   # arbusto con objeto encima de cada plataforma
 DOOR = (4, 7)                             # casilla inferior izquierda de la puerta de 2x2
+BOSS = (4, 1)                             # esquina superior izquierda del jefe (tipo 3)
 
 
 def main():
@@ -63,12 +64,13 @@ def main():
     lines += ["".join(map(str, row)) for row in collision]
     lines.append(f"ITEMS {len(BUSHES)}")
     lines += [f"{x} {y} {item}" for x, y, item in BUSHES]
-    (LEVELS / "level05.txt").write_text("\n".join(lines) + "\n", encoding="utf-8")
+    lines += ["ENEMIES 1", f"{BOSS[0]} {BOSS[1]} 3 0"]
+    (LEVELS / "level06.txt").write_text("\n".join(lines) + "\n", encoding="utf-8")
 
     # Versión para Tiled, con el conversor del proyecto.
     subprocess.run([sys.executable, str(ROOT / "tools" / "tiled_map.py"), "to-tiled",
-                    str(LEVELS / "level05.txt"), str(LEVELS / "level05.tmj")], check=True)
-    print("Generados level05.txt y level05.tmj")
+                    str(LEVELS / "level06.txt"), str(LEVELS / "level06.tmj")], check=True)
+    print("Generados level06.txt y level06.tmj")
 
 
 if __name__ == "__main__":

@@ -81,7 +81,7 @@ void Game::updateMusic()
 	if (state == MENU || state == INSTRUCTIONS || state == CREDITS || state == LEVEL_SELECT)
 		music = Audio::MENU_MUSIC;
 	else if (state == PLAYING)
-		music = scene.getLevel() == Scene::BOSS_LEVEL ? Audio::BOSS_MUSIC : Audio::LEVEL_MUSIC;
+		music = scene.isBossLevel() ? Audio::BOSS_MUSIC : Audio::LEVEL_MUSIC;
 	if (music == Audio::NO_MUSIC) audio.stopMusic();
 	else audio.playMusic(music, true);  // no hace nada si ya suena
 }
@@ -90,7 +90,7 @@ void Game::updateMusic()
 // para que el último (el jefe) siga siendo alcanzable.
 int Game::nextLevel(int level)
 {
-	for (int next = level + 1; next <= LevelSelect::LEVEL_COUNT; ++next)
+	for (int next = level + 1; next <= Scene::LEVEL_COUNT; ++next)
 		if (Scene::levelExists(next)) return next;
 	return 0;
 }
@@ -124,6 +124,16 @@ bool Game::update(int deltaTime)
 			else fadePhase = NO_FADE;
 		}
 		return bPlay;
+	}
+
+	// Teclas 1-5 (atajo de prueba): cargan ese nivel desde cualquier pantalla, aunque
+	// esté bloqueado. La sala del jefe (nivel 6) solo se alcanza superando el 5.
+	for (int number = 1; number <= LevelSelect::LEVEL_COUNT; ++number) {
+		if (consumeKey(GLFW_KEY_0 + number) && Scene::levelExists(number)) {
+			unlockLevel(number);
+			fadeTo(PLAYING, number, state != PLAYING);  // desde un menú, partida nueva
+			return bPlay;
+		}
 	}
 
 	switch (state) {

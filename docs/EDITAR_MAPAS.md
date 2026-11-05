@@ -41,14 +41,15 @@ Al importar se guardan con el nivel.
 
 ## Enemigos
 
-En Ocean puedes mover o duplicar los puntos de tipo `enemy` en OBJECTS. Usa `enemyType`
-con 0 para Shooter, 1 para Koopa y 2 para Boo. Activa `facingLeft` para que mire a la izquierda.
+En cualquier nivel puedes mover o duplicar los puntos de tipo `enemy` en OBJECTS. Usa `enemyType`
+con 0 para Shooter, 1 para Koopa, 2 para Boo y 3 para el jefe. Activa `facingLeft` para que mire a la izquierda.
 La casilla de Shooter y Koopa corresponde a sus pies. El Shooter también necesita libre la
-casilla superior. El punto de Boo marca su esquina superior izquierda.
+casilla superior. El punto de Boo y el del jefe marcan su esquina superior izquierda.
+Un nivel con jefe termina solo unos segundos después de vencerlo (sin entrar en la puerta).
 
 Al convertir el mapa, cada enemigo se guarda como `columna fila tipo miraIzquierda` en
 `ENEMIES`. La propiedad de mapa `useMapEnemies` conserva esa sección al quitar todos
-los enemigos. Forest usa sus posiciones originales cuando el archivo carece de la sección.
+los enemigos. Ya no hay posiciones fijas en el código: sin esta sección, el nivel no tiene enemigos.
 
 ## Aplicar al juego
 
