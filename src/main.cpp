@@ -2,6 +2,7 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include "Game.h"
+#include "Audio.h"
 #include <algorithm>
 #include <iostream>
 #include <stdexcept>
@@ -82,6 +83,7 @@ int main(int argc, char** argv)
     try {
 
 	/* Init step of the game loop */
+	Audio::instance().init(!smoke);  // las pruebas automáticas no suenan
 	Game::instance().init();
     if (mapEffects) Game::instance().startMapEffectsTest();
     if (originalEffects) Game::instance().startOriginalEffectsTest();
