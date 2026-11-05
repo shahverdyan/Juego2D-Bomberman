@@ -2,6 +2,7 @@
 #define _SCENE_INCLUDE
 
 
+#include <string>
 #include <vector>
 #include <glm/glm.hpp>
 #include "Texture.h"
@@ -12,6 +13,8 @@
 #include "Bomb.h"
 #include "Shooter.h"
 #include "Walker.h"
+#include "Boo.h"
+#include "Door.h"
 #include "Hud.h"
 #include "Item.h"
 
@@ -41,6 +44,23 @@ public:
     void shutdown();
     void resetPlayer();
     void toggleInvulnerability() { invulnerableMode = !invulnerableMode; }
+    void killAllEnemies();  // tecla K: la puerta se abre al no quedar enemigos
+    // El menú y las pantallas usan el mismo shader que la partida.
+    ShaderProgram& getShaderProgram() { return texProgram; }
+
+    // Niveles 1..LEVEL_COUNT, en levels/levelNN.txt.
+    static const int LEVEL_COUNT = 5;
+    static std::string levelFile(int number);
+    static bool levelExists(int number);
+    // Partida nueva desde la selección de nivel: jugador con sus valores iniciales.
+    void startNewGame(int number);
+    // Siguiente nivel tras cruzar el portal: conserva vidas y mejoras.
+    void startLevel(int number);
+    int getLevel() const { return level; }
+
+    // Lo que ha pasado en la partida; Game lo consulta tras cada update.
+    enum Result { RUNNING, LEVEL_COMPLETED, GAME_OVER };
+    Result getResult() const { return result; }
 
     // Tiempo límite del nivel. Cambiar aquí (los niveles futuros serán más pequeños).
     static const int LEVEL_TIME_SECONDS = 4 * 60;
@@ -55,7 +75,9 @@ private:
     bool touchesFire(const movement::Body& body) const;
     void killEnemiesInBlast();
     void damagePlayer();
-    void restartLevel();
+    int aliveEnemies() const;
+    void loadLevel();
+    void setupDoor();
 
     TileMap* map;
     Player* player;
@@ -75,14 +97,22 @@ private:
     Texture* shooterTexture;
     Texture* shooterBulletTexture;
     Texture* walkerTexture;
+    Texture* booTexture;
 
     // Objetos escondidos en arbustos (Fire Up, Bomb Up, corazón, estrella).
     std::vector<Item> items;
     Texture* itemTexture;
     Sprite* itemSprite;  // una animación por tipo de objeto
 
+    // Puerta-portal del final: se abre cuando no quedan enemigos.
+    Texture* doorTexture;
+    Door door;
+    bool levelHasDoor = false;
+
     Hud* hud;
-    int level;
+    int level;  // número del nivel cargado (1..LEVEL_COUNT)
+    Result result = RUNNING;
+    bool timeUp = false;  // se acabó el tiempo: tras la animación de muerte, game over
     int timeLeftMs;
     bool mapEffectsTest = false;
     bool originalEffectsTest = false;

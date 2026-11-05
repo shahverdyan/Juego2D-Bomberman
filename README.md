@@ -14,7 +14,10 @@ La cámara muestra 10x9 bloques de juego, con HUD independiente.
 - La explosión inicial tiene alcance 1 (una celda por dirección), se detiene ante terreno sólido y destruye arbustos físicos; una explosión en la cabecera de una cascada la retrae en 1 s.
 - La capacidad y el alcance tienen valores y métodos de mejora para futuros power-ups.
 - R: regresar al inicio.
-- Escape: salir.
+- G: invulnerabilidad. K: eliminar a todos los enemigos (abre el portal).
+- Menú y selección de nivel: flechas arriba/abajo o W/S para elegir, Espacio o Enter para aceptar.
+- Escape: desde la partida, game over o victoria vuelve a la selección de nivel; desde ella,
+  instrucciones o créditos vuelve al menú principal; en el menú principal, salir.
 
 ## Carpetas
 

@@ -17,6 +17,7 @@ public:
     void setPosition(const glm::vec2& pos);
     glm::vec2 getPosition() const { return glm::vec2(body.x, body.y); }
     const movement::Body& getBody() const { return body; }
+    bool isFacingLeft() const { return facingLeft; }
     bool canPlaceBomb(std::size_t activeBombCount) const { return activeBombCount < bombCapacity; }
     int getFireRange() const { return fireRange; }
     std::size_t getBombCapacity() const { return bombCapacity; }
@@ -39,7 +40,18 @@ public:
     int getStarMs() const { return starMs; }
     // Vuelve a los valores iniciales (al reiniciar el nivel tras perder todas las vidas).
     void resetStats();
+
+    // Muerte, como en Mario: cara de susto quieto, salto y caída fuera de la
+    // pantalla. Mientras dura, la Scene llama a updateDeath() en vez de update().
+    static const int DEATH_PAUSE_MS = 500;  // quieto antes del salto
+    static const int DEATH_MS = 1800;       // duración total
+    void startDying();
+    void updateDeath(int deltaTime);
+    bool isDying() const { return dying; }
+    bool deathFinished() const { return dying && deathMs >= DEATH_MS; }
 private:
+    bool dying = false;
+    int deathMs = 0;
     movement::Body body;
     PlayerHealth health;
     int starMs = 0;

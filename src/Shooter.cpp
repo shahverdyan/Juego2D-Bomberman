@@ -2,11 +2,12 @@
 #include <cmath>
 #include "Shooter.h"
 
-// Atlas shooter-atlas.png (tools/build_shooter.py): 8 columnas x 2 filas de 32x48.
+// Atlas shooter-atlas.png (tools/build_shooter.py): 8 columnas x 3 filas de 32x48.
 // Fila 0 mira a la izquierda, fila 1 a la derecha.
 // Columnas: 0-3 caminar, 4 alerta, 6-7 disparo.
+// Fila 2, muerte: el fotograma de alerta boca abajo (col 0 izquierda, col 1 derecha).
 enum ShooterAnims {
-    WALK_LEFT, WALK_RIGHT, ALERT_LEFT, ALERT_RIGHT, SHOOT_LEFT, SHOOT_RIGHT
+    WALK_LEFT, WALK_RIGHT, ALERT_LEFT, ALERT_RIGHT, SHOOT_LEFT, SHOOT_RIGHT, DEATH_LEFT, DEATH_RIGHT
 };
 
 Shooter::Shooter(const glm::vec2& position, bool facingLeft)
@@ -18,9 +19,9 @@ Shooter::~Shooter() {
 }
 
 void Shooter::init(Texture* spritesheet, Texture* bulletTexture, ShaderProgram& program) {
-    const glm::vec2 cell(1.f / 8.f, 1.f / 2.f);
+    const glm::vec2 cell(1.f / 8.f, 1.f / 3.f);
     sprite = Sprite::createSprite(glm::vec2(WIDTH, HEIGHT), cell, spritesheet, &program);
-    sprite->setNumberAnimations(6);
+    sprite->setNumberAnimations(8);
     for (int row = 0; row < 2; ++row) {
         const float v = row * cell.y;
         sprite->setAnimationSpeed(WALK_LEFT + row, 6);
@@ -31,6 +32,8 @@ void Shooter::init(Texture* spritesheet, Texture* bulletTexture, ShaderProgram& 
         sprite->setAnimationSpeed(SHOOT_LEFT + row, 8);
         sprite->addKeyframe(SHOOT_LEFT + row, glm::vec2(6 * cell.x, v));
         sprite->addKeyframe(SHOOT_LEFT + row, glm::vec2(7 * cell.x, v));
+        sprite->setAnimationSpeed(DEATH_LEFT + row, 1);
+        sprite->addKeyframe(DEATH_LEFT + row, glm::vec2(row * cell.x, 2 * cell.y));
     }
     sprite->changeAnimation(facingLeft ? WALK_LEFT : WALK_RIGHT);
     sprite->setPosition(glm::vec2(body.x, body.y));
@@ -43,7 +46,7 @@ void Shooter::init(Texture* spritesheet, Texture* bulletTexture, ShaderProgram& 
     bulletSprite->changeAnimation(0);
 }
 
-void Shooter::update(int deltaTime, const movement::Body& player) {
+void Shooter::update(int deltaTime, const movement::Body& player, bool) {
     const float seconds = deltaTime / 1000.f;
     seesPlayer = canSee(player);
 
@@ -72,6 +75,10 @@ void Shooter::update(int deltaTime, const movement::Body& player) {
     if (fireAnimMs > 0) anim = SHOOT_LEFT + side;
     else if (seesPlayer) anim = ALERT_LEFT + side;
     updateSprite(deltaTime, anim);
+}
+
+int Shooter::deathAnimation() const {
+    return facingLeft ? DEATH_LEFT : DEATH_RIGHT;
 }
 
 // Ve al jugador si: (1) la línea de la bala cruza su cuerpo, (2) está delante

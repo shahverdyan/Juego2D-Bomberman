@@ -9,6 +9,7 @@ La imagen fuente es una captura RGB con el fondo de cuadros grises/blancos
   4. Genera src/images/shooter-atlas.png: fila 0 mira a la izquierda,
      fila 1 es el espejo (mira a la derecha). Columnas:
        0-3 caminar, 4-5 alerta, 6-7 disparo.
+     Fila 2: muerte, el fotograma de alerta boca abajo (col 0 izquierda, col 1 derecha).
      Y src/images/shooter-bullet.png.
 
 Uso: python tools/build_shooter.py
@@ -113,11 +114,15 @@ def main():
     sneeds.sort(key=lambda b: (int((b[1] + b[3]) / 2 // 290), b[0]))
 
     scale = max(b[3] - b[1] for b in sneeds) / (CELL_H - 2)
-    atlas = Image.new("RGBA", (CELL_W * 8, CELL_H * 2), (0, 0, 0, 0))
+    atlas = Image.new("RGBA", (CELL_W * 8, CELL_H * 3), (0, 0, 0, 0))
     for i, box in enumerate(sneeds):
         cell = shrink(cut(im, mask, box), scale, CELL_W, CELL_H)
         atlas.alpha_composite(cell, (i * CELL_W, 0))
         atlas.alpha_composite(cell.transpose(Image.FLIP_LEFT_RIGHT), (i * CELL_W, CELL_H))
+        if i == 4:
+            dead = cell.transpose(Image.FLIP_TOP_BOTTOM)
+            atlas.alpha_composite(dead, (0, 2 * CELL_H))
+            atlas.alpha_composite(dead.transpose(Image.FLIP_LEFT_RIGHT), (CELL_W, 2 * CELL_H))
     atlas.save(IMAGES / "shooter-atlas.png")
 
     bullet = cut(im, mask, bullet_box)

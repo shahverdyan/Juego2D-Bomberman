@@ -1,4 +1,5 @@
 #include <iostream>
+#include <fstream>
 #include <cmath>
 #include <algorithm>
 #include <stdexcept>
@@ -18,6 +19,8 @@ Scene::Scene() {
     shooterTexture = NULL;
     shooterBulletTexture = NULL;
     walkerTexture = NULL;
+    booTexture = NULL;
+    doorTexture = NULL;
     itemTexture = NULL;
     itemSprite = NULL;
     hud = NULL;
@@ -45,6 +48,8 @@ void Scene::shutdown() {
     delete shooterTexture; shooterTexture = NULL;
     delete shooterBulletTexture; shooterBulletTexture = NULL;
     delete walkerTexture; walkerTexture = NULL;
+    delete booTexture; booTexture = NULL;
+    delete doorTexture; doorTexture = NULL;
 
     delete itemSprite; itemSprite = NULL;
     delete itemTexture; itemTexture = NULL;
@@ -57,6 +62,7 @@ void Scene::shutdown() {
 }
 
 void Scene::resetPlayer() {
+    if (player->isDying()) return;  // la tecla R no interrumpe la animación de muerte
     player->setPosition(map->getSpawn());
     bombs.clear();
     for (Enemy* enemy : enemies) enemy->clearProjectiles();
@@ -64,7 +70,7 @@ void Scene::resetPlayer() {
 
 void Scene::init() {
     initShaders();
-    map = TileMap::createTileMap("levels/level01.txt", glm::vec2(0, 0), texProgram);
+    map = TileMap::createTileMap(levelFile(level), glm::vec2(0, 0), texProgram);
 
     bombTexture = new Texture();
     if (!bombTexture->loadFromFile("images/original-bomb-atlas.png",TEXTURE_PIXEL_FORMAT_RGBA))
@@ -107,12 +113,18 @@ void Scene::init() {
         throw std::runtime_error("Cannot load images/shooter-bullet.png");
     shooterBulletTexture->setMinFilter(GL_NEAREST);
     shooterBulletTexture->setMagFilter(GL_NEAREST);
-    // Sprite provisional del walker: el antiguo personaje Bubble.
+    // Walker: Koopa Troopa, atlas generado por tools/build_koopa.py.
     walkerTexture = new Texture();
-    if (!walkerTexture->loadFromFile("images/bub.png", TEXTURE_PIXEL_FORMAT_RGBA))
-        throw std::runtime_error("Cannot load images/bub.png");
+    if (!walkerTexture->loadFromFile("images/koopa-atlas.png", TEXTURE_PIXEL_FORMAT_RGBA))
+        throw std::runtime_error("Cannot load images/koopa-atlas.png");
     walkerTexture->setMinFilter(GL_NEAREST);
     walkerTexture->setMagFilter(GL_NEAREST);
+    // Boo: atlas generado por tools/build_boo.py.
+    booTexture = new Texture();
+    if (!booTexture->loadFromFile("images/boo-atlas.png", TEXTURE_PIXEL_FORMAT_RGBA))
+        throw std::runtime_error("Cannot load images/boo-atlas.png");
+    booTexture->setMinFilter(GL_NEAREST);
+    booTexture->setMagFilter(GL_NEAREST);
 
     spawnEnemies();
 
@@ -130,6 +142,14 @@ void Scene::init() {
         itemSprite->addKeyframe(type, glm::vec2(float(type) / ITEM_TYPE_COUNT, 0.f));
     }
     spawnItems();
+
+    // Puerta-portal: atlas generado por tools/build_portal.py.
+    doorTexture = new Texture();
+    if (!doorTexture->loadFromFile("images/portal-atlas.png", TEXTURE_PIXEL_FORMAT_RGBA))
+        throw std::runtime_error("Cannot load images/portal-atlas.png");
+    doorTexture->setMinFilter(GL_NEAREST);
+    doorTexture->setMagFilter(GL_NEAREST);
+    setupDoor();
 
     hud = new Hud();
     hud->init(texProgram);
@@ -166,6 +186,14 @@ void Scene::spawnEnemies() {
         Walker* walker = new Walker(position, spawn.facingLeft);
         walker->init(walkerTexture, texProgram);
         enemies.push_back(walker);
+    }
+
+    // Boos: flotan en zonas abiertas. Cada spawn: {columna, fila de la hitbox}.
+    const Spawn booSpawns[] = { { 20, 15, true }, { 38, 5, true } };
+    for (const Spawn& spawn : booSpawns) {
+        Boo* boo = new Boo(glm::vec2(spawn.tileX * tileSize, spawn.floorRow * tileSize), spawn.facingLeft);
+        boo->init(booTexture, texProgram);
+        enemies.push_back(boo);
     }
 
     for (Enemy* enemy : enemies) enemy->setTileMap(map);
@@ -211,30 +239,87 @@ void Scene::pickUpItems() {
     }
 }
 
-// Quita una vida si el jugador puede recibir daño. Sin vidas, se reinicia el nivel.
+// Quita una vida si el jugador puede recibir daño y empieza su animación de
+// muerte. Al terminarla, update() lo hace reaparecer o acaba la partida.
 void Scene::damagePlayer() {
     if (invulnerableMode || !player->canBeHurt()) return;
     if (player->takeHit() != PlayerHealth::Damage::LifeLost) return;
-    if (player->getLives() <= 0) restartLevel();
-    else player->setPosition(map->getSpawn());
+    player->startDying();
 }
 
-// Provisional hasta tener menú: al perder las 3 vidas se recarga el nivel
-// (mapa, enemigos, tiempo) y el jugador vuelve a sus valores iniciales.
-void Scene::restartLevel() {
+// Enemigos que siguen vivos (los que reproducen su animación de muerte no cuentan).
+int Scene::aliveEnemies() const {
+    int alive = 0;
+    for (const Enemy* enemy : enemies)
+        if (!enemy->isDying()) ++alive;
+    return alive;
+}
+
+// levels/level01.txt, levels/level02.txt...
+std::string Scene::levelFile(int number) {
+    return std::string("levels/level") + (number < 10 ? "0" : "") + std::to_string(number) + ".txt";
+}
+
+bool Scene::levelExists(int number) {
+    return number >= 1 && number <= LEVEL_COUNT && std::ifstream(levelFile(number)).good();
+}
+
+void Scene::startNewGame(int number) {
+    player->resetStats();
+    startLevel(number);
+}
+
+void Scene::startLevel(int number) {
+    level = number;
+    loadLevel();
+}
+
+// Carga (o recarga) el nivel actual: mapa, enemigos, objetos, puerta y tiempo.
+// Los enemigos aún tienen posiciones fijas del nivel 1 (spawnEnemies).
+void Scene::loadLevel() {
     for (Enemy* enemy : enemies) delete enemy;
     enemies.clear();
     delete map;
-    map = TileMap::createTileMap("levels/level01.txt", glm::vec2(0, 0), texProgram);
+    map = TileMap::createTileMap(levelFile(level), glm::vec2(0, 0), texProgram);
+    result = RUNNING;
+    timeUp = false;
     player->setTileMap(map);
-    player->resetStats();
     spawnEnemies();
     spawnItems();
+    setupDoor();
     resetPlayer();
     timeLeftMs = LEVEL_TIME_SECONDS * 1000;
 }
 
+// Coloca la puerta cerrada sobre el marcador del mapa. El marcador es la casilla
+// inferior izquierda de un hueco de 2x2 tiles; la puerta se apoya en su suelo.
+void Scene::setupDoor() {
+    levelHasDoor = map->hasDoor();
+    if (!levelHasDoor) return;
+    const float tileSize = float(map->getTileSize());
+    const glm::ivec2 tile = map->getDoorTile();
+    door.init(doorTexture, texProgram, glm::vec2((tile.x + 1) * tileSize, (tile.y + 1) * tileSize));
+}
+
+// Tecla K: mata a todos los enemigos (y sus balas). La puerta se abrirá sola.
+void Scene::killAllEnemies() {
+    for (Enemy* enemy : enemies) enemy->kill();
+}
+
 void Scene::update(int deltaTime) {
+    if (result != RUNNING) return;  // Game ya está cambiando de pantalla
+
+    // Muerte del jugador: el resto del mundo se congela mientras dura la animación.
+    // Al acabar, reaparece en el inicio o, sin vidas o sin tiempo, se pierde.
+    if (player->isDying()) {
+        player->updateDeath(deltaTime);
+        if (player->deathFinished()) {
+            if (timeUp || player->getLives() <= 0) result = GAME_OVER;
+            else player->setPosition(map->getSpawn());
+        }
+        return;
+    }
+
     currentTime += deltaTime;
     map->update(deltaTime);
 
@@ -255,17 +340,46 @@ void Scene::update(int deltaTime) {
     const movement::Body& playerBody = player->getBody();
     bool playerHurt = false;
     for (Enemy* enemy : enemies) {
-        enemy->update(deltaTime, playerBody);
+        // Los que están muriendo solo avanzan su animación y ya no hacen daño.
+        if (enemy->isDying()) {
+            enemy->updateDeath(deltaTime);
+            continue;
+        }
+        enemy->update(deltaTime, playerBody, player->isFacingLeft());
         if (enemy->hitsPlayer(playerBody) || enemy->touches(playerBody)) playerHurt = true;
     }
     if (touchesFire(playerBody)) playerHurt = true;
     if (playerHurt) damagePlayer();
 
-    // Tiempo límite: al llegar a 0 se pierde una vida y el reloj vuelve a empezar.
+    // Se borran los enemigos cuya animación de muerte ha terminado.
+    for (auto it = enemies.begin(); it != enemies.end();) {
+        if ((*it)->isDead()) {
+            delete *it;
+            it = enemies.erase(it);
+        } else {
+            ++it;
+        }
+    }
+    if (player->isDying()) return;  // a partir del siguiente frame, animación de muerte
+
+    // Puerta: se abre al no quedar enemigos vivos; abierta, el jugador completa el nivel.
+    if (levelHasDoor) {
+        if (aliveEnemies() == 0) door.open();
+        door.update(deltaTime);
+        if (door.isOpen() && door.contains(player->getBody())) result = LEVEL_COMPLETED;
+    }
+
+    // Tiempo límite: al llegar a 0 la partida se pierde directamente, sin importar
+    // las vidas, el corazón dorado o la estrella (tras la animación de muerte).
+    // Solo la tecla G (modo de prueba) lo evita: entonces el reloj vuelve a empezar.
     timeLeftMs -= deltaTime;
     if (timeLeftMs <= 0) {
-        timeLeftMs = LEVEL_TIME_SECONDS * 1000;
-        damagePlayer();
+        if (invulnerableMode) timeLeftMs = LEVEL_TIME_SECONDS * 1000;
+        else {
+            timeLeftMs = 0;
+            timeUp = true;
+            player->startDying();
+        }
     }
 
     const glm::vec2 pos = player->getPosition();
@@ -374,15 +488,10 @@ bool Scene::touchesFire(const movement::Body& body) const {
 }
 
 // Cualquier enemigo que toque el fuego muere: se borra (con sus balas, si tiene).
+// El fuego mata a los enemigos que toca: empiezan su animación de muerte.
 void Scene::killEnemiesInBlast() {
-    for (auto it = enemies.begin(); it != enemies.end();) {
-        if (touchesFire((*it)->getBody())) {
-            delete *it;
-            it = enemies.erase(it);
-        } else {
-            ++it;
-        }
-    }
+    for (Enemy* enemy : enemies)
+        if (!enemy->isDying() && touchesFire(enemy->getBody())) enemy->kill();
 }
 
 void Scene::render() {
@@ -396,6 +505,7 @@ void Scene::render() {
     texProgram.setUniformMatrix4f("modelview", modelview);
     texProgram.setUniform2f("texCoordDispl", 0.f, 0.f);
     map->render();
+    if (levelHasDoor) door.render();
 
     for (const Item& item : items) {
         if (!item.revealed) continue;
@@ -437,7 +547,7 @@ void Scene::render() {
     info.spareLives = player->getSpareLives();
     info.goldHeart = player->hasGoldHeart();
     info.secondsLeft = (timeLeftMs + 999) / 1000;
-    info.enemiesLeft = int(enemies.size());
+    info.enemiesLeft = aliveEnemies();
     info.fireRange = player->getFireRange();
     info.bombCapacity = int(player->getBombCapacity());
     hud->render(info);

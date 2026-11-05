@@ -10,27 +10,161 @@ void Game::init()
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	scene.init();
+	// Las pantallas comparten el shader de la Scene.
+	menu = new Menu();
+	menu->init(scene.getShaderProgram());
+	instructions = new Screen();
+	instructions->init("images/menu-instructions.png", scene.getShaderProgram());
+	credits = new Screen();
+	credits->init("images/menu-credits.png", scene.getShaderProgram());
+	levelSelect = new LevelSelect();
+	levelSelect->init(scene.getShaderProgram());
+	// Solo se pueden elegir los niveles cuyo archivo existe.
+	for (int level = 1; level <= LevelSelect::LEVEL_COUNT; ++level)
+		levelSelect->setAvailable(level, Scene::levelExists(level));
+	gameOver = new Screen();
+	gameOver->init("images/game-over.jpeg", scene.getShaderProgram());
+	victory = new Screen();
+	victory->init("images/victory.jpeg", scene.getShaderProgram());
+
+	// Cuadro negro para los fundidos: una textura de 1x1 basta, porque el color
+	// final lo pone el uniform "color" (negro con la transparencia del fundido).
+	unsigned char white = 255;
+	fadeTexture = new Texture();
+	fadeTexture->loadFromGlyphBuffer(&white, 1, 1);
+	fadeSprite = Sprite::createSprite(glm::vec2(float(SCREEN_WIDTH), float(SCREEN_HEIGHT)),
+		glm::vec2(1.f, 1.f), fadeTexture, &scene.getShaderProgram());
+	fadeSprite->setNumberAnimations(1);
+	fadeSprite->setAnimationSpeed(0, 1);
+	fadeSprite->addKeyframe(0, glm::vec2(0.f, 0.f));
+	fadeSprite->changeAnimation(0);
+	fadeSprite->setPosition(glm::vec2(0.f, 0.f));
+
+	changeState(MENU);
+}
+
+// Cambia de estado y descarta las teclas pulsadas en el anterior, para que
+// por ejemplo el Espacio que elige "Jugar" no ponga también una bomba.
+void Game::changeState(GameState newState)
+{
+	state = newState;
+	for (bool& key : pressed) key = false;
+}
+
+// Empieza un fundido a negro. El cambio se aplica cuando la pantalla está negra.
+void Game::fadeTo(GameState newState, int newLevel, bool newGame)
+{
+	pendingState = newState;
+	pendingLevel = newLevel;
+	pendingNewGame = newGame;
+	fadePhase = FADE_OUT;
+	fadeMs = 0;
+}
+
+void Game::applyPendingChange()
+{
+	if (pendingLevel != 0) {
+		if (pendingNewGame) scene.startNewGame(pendingLevel);
+		else scene.startLevel(pendingLevel);
+	}
+	changeState(pendingState);
 }
 
 bool Game::update(int deltaTime)
 {
-	if (consumeKey(GLFW_KEY_R)) scene.resetPlayer();
-	if (consumeKey(GLFW_KEY_G)) scene.toggleInvulnerability();
-	scene.update(deltaTime);
+	// Durante un fundido solo avanza la transición.
+	if (fadePhase != NO_FADE) {
+		fadeMs += deltaTime;
+		if (fadeMs >= FADE_MS) {
+			fadeMs = 0;
+			if (fadePhase == FADE_OUT) {
+				applyPendingChange();
+				fadePhase = FADE_IN;
+			}
+			else fadePhase = NO_FADE;
+		}
+		return bPlay;
+	}
 
+	switch (state) {
+	case MENU: {
+		if (consumeKey(GLFW_KEY_ESCAPE)) bPlay = false;
+		const int choice = menu->update(deltaTime);
+		if (choice == Menu::PLAY) fadeTo(LEVEL_SELECT);
+		else if (choice == Menu::INSTRUCTIONS) fadeTo(INSTRUCTIONS);
+		else if (choice == Menu::CREDITS) fadeTo(CREDITS);
+		break;
+	}
+	case INSTRUCTIONS:
+	case CREDITS:
+		if (consumeKey(GLFW_KEY_ESCAPE) | consumeKey(GLFW_KEY_SPACE) | consumeKey(GLFW_KEY_ENTER))
+			fadeTo(MENU);
+		break;
+	case LEVEL_SELECT: {
+		if (consumeKey(GLFW_KEY_ESCAPE)) {
+			fadeTo(MENU);
+			break;
+		}
+		const int level = levelSelect->update();
+		if (level != LevelSelect::NO_CHOICE) fadeTo(PLAYING, level, true);
+		break;
+	}
+	case PLAYING:
+		// ESC abandona la partida y vuelve a la selección de nivel (el menú de juego).
+		if (consumeKey(GLFW_KEY_ESCAPE)) {
+			fadeTo(LEVEL_SELECT);
+			break;
+		}
+		if (consumeKey(GLFW_KEY_R)) scene.resetPlayer();
+		if (consumeKey(GLFW_KEY_G)) scene.toggleInvulnerability();
+		if (consumeKey(GLFW_KEY_K)) scene.killAllEnemies();
+		scene.update(deltaTime);
+		if (scene.getResult() == Scene::GAME_OVER) fadeTo(GAME_OVER);
+		else if (scene.getResult() == Scene::LEVEL_COMPLETED) {
+			// Pasa al siguiente nivel; si no hay más, se ha ganado la partida.
+			const int next = scene.getLevel() + 1;
+			if (Scene::levelExists(next)) fadeTo(PLAYING, next);
+			else fadeTo(VICTORY);
+		}
+		break;
+	case GAME_OVER:
+	case VICTORY:
+		if (consumeKey(GLFW_KEY_ESCAPE) | consumeKey(GLFW_KEY_SPACE) | consumeKey(GLFW_KEY_ENTER))
+			fadeTo(LEVEL_SELECT);
+		break;
+	}
 	return bPlay;
 }
 
 void Game::render()
 {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	scene.render();
+	switch (state) {
+	case MENU:         menu->render(); break;
+	case INSTRUCTIONS: instructions->render(); break;
+	case CREDITS:      credits->render(); break;
+	case LEVEL_SELECT: levelSelect->render(); break;
+	case PLAYING:      scene.render(); break;
+	case GAME_OVER:    gameOver->render(); break;
+	case VICTORY:      victory->render(); break;
+	}
+	if (fadePhase != NO_FADE) renderFade();
+}
+
+// Cuadro negro encima de todo: va de transparente a opaco (FADE_OUT) y al revés (FADE_IN).
+void Game::renderFade()
+{
+	const float t = float(fadeMs) / FADE_MS;
+	const float alpha = (fadePhase == FADE_OUT) ? t : 1.f - t;
+	ShaderProgram& program = scene.getShaderProgram();
+	Screen::beginFullWindow(program);
+	program.setUniform4f("color", 0.f, 0.f, 0.f, alpha);
+	fadeSprite->render();
+	program.setUniform4f("color", 1.f, 1.f, 1.f, 1.f);
 }
 
 void Game::keyPressed(int key)
 {
-	if(key == GLFW_KEY_ESCAPE) // Escape code
-		bPlay = false;
 	if (key >= 0 && key <= GLFW_KEY_LAST) {
         if (!keys[key]) pressed[key] = true;
         keys[key] = true;
@@ -66,12 +200,24 @@ bool Game::consumeKey(int key) {
     if (key < 0 || key > GLFW_KEY_LAST) return false;
     bool value = pressed[key]; pressed[key] = false; return value;
 }
-void Game::shutdown() { scene.shutdown(); }
+// Las pantallas se liberan aquí, mientras el contexto de OpenGL sigue vivo.
+void Game::shutdown() {
+    delete menu; menu = nullptr;
+    delete instructions; instructions = nullptr;
+    delete credits; credits = nullptr;
+    delete levelSelect; levelSelect = nullptr;
+    delete gameOver; gameOver = nullptr;
+    delete victory; victory = nullptr;
+    delete fadeSprite; fadeSprite = nullptr;
+    delete fadeTexture; fadeTexture = nullptr;
+    scene.shutdown();
+}
 
-void Game::startMapEffectsTest() { scene.startMapEffectsTest(); }
+// Las pruebas ocultas empiezan directamente en la partida, sin menú.
+void Game::startMapEffectsTest() { changeState(PLAYING); scene.startMapEffectsTest(); }
 
-void Game::runHudTestStep(int step) { scene.runHudTestStep(step); }
+void Game::runHudTestStep(int step) { if (step == 0) changeState(PLAYING); scene.runHudTestStep(step); }
 
-void Game::runBombCollisionTest() { scene.runBombCollisionTest(); }
+void Game::runBombCollisionTest() { changeState(PLAYING); scene.runBombCollisionTest(); }
 
-void Game::startOriginalEffectsTest() { scene.startOriginalEffectsTest(); }
+void Game::startOriginalEffectsTest() { changeState(PLAYING); scene.startOriginalEffectsTest(); }

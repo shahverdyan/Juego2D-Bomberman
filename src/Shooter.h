@@ -11,7 +11,7 @@ public:
 
     static constexpr float WIDTH = 32.f, HEIGHT = 48.f;
     static constexpr float WALK_SPEED = 60.f;        // unidades/s
-    static constexpr float VISION_RANGE = 8 * 32.f;  // 8 tiles
+    static constexpr float VISION_RANGE = 5 * 32.f;  // 5 tiles (media pantalla)
     static constexpr float BULLET_SPEED = 160.f;     // unidades/s
     static constexpr float BULLET_SIZE = 16.f;
     static constexpr float MUZZLE_Y = 26.f;          // altura de la boca respecto a y
@@ -25,7 +25,8 @@ public:
 
     // Las texturas pertenecen a la Scene y se comparten entre shooters.
     void init(Texture* spritesheet, Texture* bulletTexture, ShaderProgram& program);
-    void update(int deltaTime, const movement::Body& player) override;
+    void update(int deltaTime, const movement::Body& player, bool playerFacingLeft) override;
+    int deathAnimation() const override;
     void render() override;
 
     // Devuelve true si alguna bala toca al jugador; esa bala desaparece.

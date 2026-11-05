@@ -18,7 +18,8 @@ public:
     Enemy& operator=(const Enemy&) = delete;
 
     void setTileMap(TileMap* tileMap) { map = tileMap; }
-    virtual void update(int deltaTime, const movement::Body& player) = 0;
+    // playerFacingLeft: hacia dónde mira el jugador (lo usa el Boo).
+    virtual void update(int deltaTime, const movement::Body& player, bool playerFacingLeft) = 0;
     virtual void render();
 
     // Proyectiles. Por defecto un enemigo no dispara: los que sí (Shooter)
@@ -30,7 +31,23 @@ public:
     // Contacto cuerpo a cuerpo con otro cuerpo (el jugador).
     bool touches(const movement::Body& other) const;
 
+    // Muerte (fuego o tecla K): deja de hacer daño, reproduce su animación
+    // durante DEATH_MS con updateDeath() y después la Scene lo borra.
+    static const int DEATH_MS = 1000;
+    void kill();
+    void updateDeath(int deltaTime);
+    bool isDying() const { return dying; }
+    bool isDead() const { return dying && deathMs >= DEATH_MS; }
+
 protected:
+    // Animación de muerte de cada tipo (índice de animación de su sprite).
+    virtual int deathAnimation() const = 0;
+    // Movimiento mientras muere. Por defecto, como en Mario: un salto hacia
+    // arriba y cae atravesando el suelo.
+    virtual void moveWhileDying(float seconds);
+    // Desplazamiento del dibujo respecto a la hitbox (el Boo lo centra).
+    virtual glm::vec2 spriteOffset() const { return glm::vec2(0.f, 0.f); }
+
     // Gravedad y colisión vertical con la misma física que el jugador (sin salto).
     void applyGravity(float seconds);
     // Avanza hacia donde mira. Devuelve true si una pared lo ha frenado.
@@ -43,4 +60,6 @@ protected:
     bool facingLeft;
     Sprite* sprite = nullptr;
     TileMap* map = nullptr;
+    bool dying = false;
+    int deathMs = 0;
 };

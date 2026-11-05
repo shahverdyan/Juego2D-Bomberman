@@ -25,6 +25,10 @@ struct LevelData {
         bool isHead(int tx, int ty) const { return tx == x && ty == top; }
     };
     std::vector<Waterfall> waterfalls;
+    // Marcador de puerta (tile 16 del atlas World 1): casilla inferior izquierda
+    // de la puerta. No se dibuja como tile: la Scene pone ahí el portal.
+    static const int DOOR_TILE = 16;
+    int doorX = -1, doorY = -1;
     struct HiddenItem { int x,y,type; };
     std::vector<HiddenItem> hiddenItems;
     bool hasItemSpawns = false;
@@ -62,6 +66,14 @@ struct LevelData {
                 if (end < height && cells[end*width+x] == 9)
                     waterfalls.push_back({x,y,end,front != 0,-1});
             }
+        }
+    }
+    void findDoor() {
+        for (int i = 0; i < width * height; ++i) {
+            if (foreground[i] != DOOR_TILE && background[i] != DOOR_TILE) continue;
+            if (doorX < 0) { doorX = i % width; doorY = i / width; }
+            if (foreground[i] == DOOR_TILE) foreground[i] = 0;
+            if (background[i] == DOOR_TILE) background[i] = 1;
         }
     }
     bool hitWaterfallHead(int x, int y) {
@@ -130,6 +142,7 @@ struct LevelData {
             }
         }
         findWaterfalls();
+        findDoor();
         // The current player is 32x32; reject a spawn inside terrain or outside the map.
         const int span = (32 + tileSize - 1) / tileSize;
         for (int y = spawnY; y < spawnY + span; ++y)

@@ -12,12 +12,12 @@
 #define FALL_STEP 4
 
 
-// Atlas rick-atlas.png (tools/build_player.py): 6 columnas x 2 filas de 24x24.
+// Atlas rick-atlas.png (tools/build_player.py): 7 columnas x 2 filas de 24x24.
 // Fila 0 mira a la derecha, fila 1 a la izquierda.
-// Columnas: 0 quieto, 1-3 caminar, 4 subiendo, 5 cayendo.
+// Columnas: 0 quieto, 1-3 caminar, 4 subiendo, 5 cayendo, 6 muerte (de frente).
 enum PlayerAnims
 {
-	STAND_LEFT, STAND_RIGHT, MOVE_LEFT, MOVE_RIGHT, JUMP_LEFT, JUMP_RIGHT, FALL_LEFT, FALL_RIGHT
+	STAND_LEFT, STAND_RIGHT, MOVE_LEFT, MOVE_RIGHT, JUMP_LEFT, JUMP_RIGHT, FALL_LEFT, FALL_RIGHT, DEATH
 };
 
 
@@ -40,9 +40,11 @@ void Player::init(const glm::ivec2 &tileMapPos, ShaderProgram &shaderProgram)
         throw std::runtime_error("Cannot load images/rick-atlas.png");
     spritesheet.setMinFilter(GL_NEAREST);
     spritesheet.setMagFilter(GL_NEAREST);
-	const glm::vec2 cell(1.f / 6.f, 1.f / 2.f);
+	const glm::vec2 cell(1.f / 7.f, 1.f / 2.f);
 	sprite = Sprite::createSprite(glm::ivec2(32, 32), cell, &spritesheet, &shaderProgram);
-	sprite->setNumberAnimations(8);
+	sprite->setNumberAnimations(9);
+	sprite->setAnimationSpeed(DEATH, 1);
+	sprite->addKeyframe(DEATH, glm::vec2(6 * cell.x, 0.f));
 	for (int side = 0; side < 2; ++side) {
 		// side 0 = izquierda (fila 1 del atlas), side 1 = derecha (fila 0).
 		const float v = (side == 0) ? cell.y : 0.f;
@@ -99,12 +101,36 @@ bool Player::update(int deltaTime, std::vector<Bomb>& bombs)
 void Player::render()
 {
 	// Parpadeo mientras es invulnerable: se dibuja 100 ms sí, 100 ms no.
-	if (!health.visible()) return;
+	if (!dying && !health.visible()) return;
 	sprite->render();
+}
+
+void Player::startDying()
+{
+	dying = true;
+	deathMs = 0;
+	body.vx = body.vy = 0.f;
+	sprite->changeAnimation(DEATH);
+}
+
+// Sin colisiones: quieto DEATH_PAUSE_MS, luego salta y cae atravesando el suelo.
+void Player::updateDeath(int deltaTime)
+{
+	const bool jumpNow = deathMs < DEATH_PAUSE_MS && deathMs + deltaTime >= DEATH_PAUSE_MS;
+	deathMs += deltaTime;
+	if (jumpNow) body.vy = -420.f;
+	if (deathMs >= DEATH_PAUSE_MS) {
+		const float seconds = deltaTime / 1000.f;
+		body.vy += 1100.f * seconds;
+		body.y += body.vy * seconds;
+	}
+	sprite->update(deltaTime);
+	sprite->setPosition(glm::vec2(body.x, body.y));
 }
 
 void Player::resetStats()
 {
+	dying = false;
 	health.reset();
 	starMs = 0;
 	bombCapacity = 1;
@@ -118,6 +144,7 @@ void Player::setTileMap(TileMap *tileMap)
 
 void Player::setPosition(const glm::vec2 &pos)
 {
+	dying = false;  // reaparecer termina la animación de muerte
 	body.x = pos.x; body.y = pos.y; body.vx = body.vy = 0; body.grounded = false;
 	sprite->setPosition(glm::vec2(float(tileMapDispl.x + body.x), float(tileMapDispl.y + body.y)));
 }

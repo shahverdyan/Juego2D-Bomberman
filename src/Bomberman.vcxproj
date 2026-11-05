@@ -26,6 +26,11 @@
     <ClInclude Include="Shader.h" />
     <ClInclude Include="Shooter.h" />
     <ClInclude Include="Walker.h" />
+    <ClInclude Include="Boo.h" />
+    <ClInclude Include="Door.h" />
+    <ClInclude Include="Menu.h" />
+    <ClInclude Include="LevelSelect.h" />
+    <ClInclude Include="Screen.h" />
     <ClInclude Include="ShaderProgram.h" />
     <ClInclude Include="Sprite.h" />
     <ClInclude Include="Texture.h" />
@@ -45,6 +50,11 @@
     <ClCompile Include="Shader.cpp" />
     <ClCompile Include="Shooter.cpp" />
     <ClCompile Include="Walker.cpp" />
+    <ClCompile Include="Boo.cpp" />
+    <ClCompile Include="Door.cpp" />
+    <ClCompile Include="Menu.cpp" />
+    <ClCompile Include="LevelSelect.cpp" />
+    <ClCompile Include="Screen.cpp" />
     <ClCompile Include="ShaderProgram.cpp" />
     <ClCompile Include="Sprite.cpp" />
     <ClCompile Include="Texture.cpp" />

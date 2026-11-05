@@ -1,7 +1,7 @@
 #pragma once
 #include "Enemy.h"
 
-// Enemigo "Walker" (estilo goomba): camina siempre en la misma dirección y
+// Enemigo "Walker" (Koopa Troopa, estilo goomba): camina siempre en la misma dirección y
 // solo se da la vuelta al chocar con una pared. No mira los bordes: si se
 // acaba el suelo, cae. Hace daño por contacto (lo comprueba la Scene).
 class Walker : public Enemy {
@@ -14,5 +14,8 @@ public:
 
     // La textura pertenece a la Scene y se comparte entre walkers.
     void init(Texture* spritesheet, ShaderProgram& program);
-    void update(int deltaTime, const movement::Body& player) override;
+    void update(int deltaTime, const movement::Body& player, bool playerFacingLeft) override;
+
+protected:
+    int deathAnimation() const override;
 };

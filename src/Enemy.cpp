@@ -46,5 +46,28 @@ bool Enemy::floorAhead() const {
 void Enemy::updateSprite(int deltaTime, int anim) {
     if (sprite->animation() != anim) sprite->changeAnimation(anim);
     sprite->update(deltaTime);
-    sprite->setPosition(glm::vec2(body.x, body.y));
+    sprite->setPosition(glm::vec2(body.x, body.y) + spriteOffset());
+}
+
+void Enemy::kill() {
+    if (dying) return;
+    dying = true;
+    deathMs = 0;
+    body.vx = 0.f;
+    body.vy = -250.f;  // pequeño salto inicial
+    clearProjectiles();
+    sprite->changeAnimation(deathAnimation());
+}
+
+void Enemy::updateDeath(int deltaTime) {
+    deathMs += deltaTime;
+    moveWhileDying(deltaTime / 1000.f);
+    sprite->update(deltaTime);
+    sprite->setPosition(glm::vec2(body.x, body.y) + spriteOffset());
+}
+
+// Sin colisiones: sube un poco y cae fuera de la pantalla.
+void Enemy::moveWhileDying(float seconds) {
+    body.vy += 900.f * seconds;
+    body.y += body.vy * seconds;
 }

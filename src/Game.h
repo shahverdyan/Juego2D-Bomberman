@@ -4,6 +4,9 @@
 
 #include <GLFW/glfw3.h>
 #include "Scene.h"
+#include "Menu.h"
+#include "LevelSelect.h"
+#include "Screen.h"
 #include "ViewConfig.h"
 
 
@@ -48,6 +51,34 @@ public:
     bool consumeKey(int key);
 
 private:
+	// Estados del juego: cada uno decide qué se actualiza y qué se dibuja.
+	enum GameState { MENU, INSTRUCTIONS, CREDITS, LEVEL_SELECT, PLAYING, GAME_OVER, VICTORY };
+	void changeState(GameState newState);
+
+	// Transición con fundido a negro: la pantalla se oscurece durante FADE_MS, se
+	// aplica el cambio (estado y, si hace falta, nivel) y vuelve a aparecer en FADE_MS.
+	// Mientras dura no se actualiza nada.
+	static const int FADE_MS = 300;
+	enum FadePhase { NO_FADE, FADE_OUT, FADE_IN };
+	void fadeTo(GameState newState, int newLevel = 0, bool newGame = false);
+	void applyPendingChange();
+	void renderFade();
+
+	FadePhase fadePhase = NO_FADE;
+	int fadeMs = 0;
+	GameState pendingState = MENU;
+	int pendingLevel = 0;         // nivel a cargar en mitad del fundido (0 = ninguno)
+	bool pendingNewGame = false;  // true: partida nueva (vidas y mejoras iniciales)
+	Texture* fadeTexture = nullptr;
+	Sprite* fadeSprite = nullptr;  // cuadro negro del tamaño de la ventana
+
+	GameState state = MENU;
+	Menu* menu = nullptr;
+	Screen* instructions = nullptr;
+	Screen* credits = nullptr;
+	LevelSelect* levelSelect = nullptr;
+	Screen* gameOver = nullptr;
+	Screen* victory = nullptr;
 	bool bPlay; // Continue to play game?
 	bool keys[GLFW_KEY_LAST+1] = {};
     bool pressed[GLFW_KEY_LAST+1] = {}; // Store key states so that

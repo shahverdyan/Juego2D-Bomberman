@@ -34,7 +34,7 @@ es asimétrico, con formas huecas inspiradas en las estructuras del original:
 - Desvío superior: desde el techo central se asciende a una copa alta y se vuelve hacia el este.
 - Paso inferior continuo: permite recuperar la ruta después de caer. No hay pozos mortales.
 
-La imagen general está en `docs/level01-preview.png`. La puerta sigue siendo visual.
+La imagen general está en `docs/level01-preview.png`. La puerta usa el marcador (43,7).
 La distribución se puede recorrer con las físicas actuales, sin depender de bombas aún no implementadas.
 
 ## Gráficos originales
@@ -46,7 +46,8 @@ La distribución se puede recorrer con las físicas actuales, sin depender de bo
 - Se excluyen la firma y la ilustración de la parte inferior de la imagen. Se conservan en el original.
 - El rip suministrado está firmado por Fret & Woppet; juego de Hudson Soft. Mantener estos créditos en la entrega.
 - El personaje sigue siendo el provisional de Bubble. Las cascadas ahora tienen colisión y animación de apertura.
-- La puerta del recorrido superior es un marcador gráfico; todavía no cambia de nivel.
+- El tile 16 (`door_marker`) marca la casilla inferior izquierda de la puerta-portal (2x2 tiles).
+  El juego no lo dibuja: coloca ahí el portal, que se abre al no quedar enemigos.
 
 ## Formato TILEMAP2
 

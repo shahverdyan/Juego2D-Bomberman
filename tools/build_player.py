@@ -7,7 +7,7 @@ copia de trabajo actual es una captura reescalada x1.2 con fondo de cuadros.
 Cada fotograma es una celda de 24x24 con fondo azul claro; los dos azules del
 fondo pasan a transparentes. Atlas resultante: 6 columnas x 2 filas de 24x24.
   Fila 0 mira a la derecha (como la fuente), fila 1 es el espejo (izquierda).
-  Columnas: 0 quieto, 1-3 caminar, 4 subiendo (salto), 5 cayendo.
+  Columnas: 0 quieto, 1-3 caminar, 4 subiendo (salto), 5 cayendo, 6 muerte (susto).
 
 Uso: python tools/build_player.py
 """
@@ -23,7 +23,7 @@ SOURCE = ("src/images/Custom _ Edited - Rick and Morty Customs - The Smith Famil
 SOURCE_COMMIT = "95db676"
 OUTPUT = ROOT / "src" / "images" / "rick-atlas.png"
 CELL = 24
-FRAME_X = [1, 101, 126, 151, 351, 401]  # x de cada celda en la fila de Rick (y = 1)
+FRAME_X = [1, 101, 126, 151, 351, 401, 776]  # x de cada celda en la fila de Rick (y = 1)
 BACKGROUND = {(50, 97, 168), (147, 187, 236)}
 
 
