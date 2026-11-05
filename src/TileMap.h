@@ -40,6 +40,8 @@ public:
     void update(int deltaMs);
     bool hasItemSpawns() const { return level.hasItemSpawns; }
     const std::vector<LevelData::HiddenItem>& getItemSpawns() const { return level.hiddenItems; }
+    bool hasEnemySpawns() const { return level.hasEnemySpawns; }
+    const std::vector<LevelData::EnemySpawn>& getEnemySpawns() const { return level.enemySpawns; }
     bool hasDoor() const { return level.doorX >= 0; }
     glm::ivec2 getDoorTile() const { return glm::ivec2(level.doorX, level.doorY); }
     glm::vec2 getSpawn() const { return glm::vec2(level.spawnX * level.tileSize, level.spawnY * level.tileSize); }

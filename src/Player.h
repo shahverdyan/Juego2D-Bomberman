@@ -21,8 +21,10 @@ public:
     bool canPlaceBomb(std::size_t activeBombCount) const { return activeBombCount < bombCapacity; }
     int getFireRange() const { return fireRange; }
     std::size_t getBombCapacity() const { return bombCapacity; }
-    void increaseBombCapacity() { ++bombCapacity; }
-    void increaseFireRange() { ++fireRange; }
+    static constexpr std::size_t MAX_BOMB_CAPACITY = 4;
+    static constexpr int MAX_FIRE_RANGE = 4;
+    void increaseBombCapacity() { if (bombCapacity < MAX_BOMB_CAPACITY) ++bombCapacity; }
+    void increaseFireRange() { if (fireRange < MAX_FIRE_RANGE) ++fireRange; }
 
     static const int MAX_LIVES = PlayerHealth::MAX_LIVES;
     int getLives() const { return health.lives; }

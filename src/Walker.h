@@ -1,9 +1,8 @@
 #pragma once
 #include "Enemy.h"
 
-// Enemigo "Walker" (Koopa Troopa, estilo goomba): camina siempre en la misma dirección y
-// solo se da la vuelta al chocar con una pared. No mira los bordes: si se
-// acaba el suelo, cae. Hace daño por contacto (lo comprueba la Scene).
+// Enemigo "Walker" (Koopa Troopa): patrulla su plataforma y gira en paredes y bordes.
+// Hace daño por contacto (lo comprueba la Scene).
 class Walker : public Enemy {
 public:
     static constexpr float WIDTH = 32.f, HEIGHT = 32.f;

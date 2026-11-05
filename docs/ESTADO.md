@@ -1,3 +1,117 @@
+# Integración de aleks y cristian
+
+- Se combinan los enemigos y objetos de los mapas de aleks con la carga especial del jefe en el nivel 5. Al reaparecer se restauran el reloj de 4:00 y el estado del encuentro.
+- La campaña actual recorre Forest, Ocean y Evil. La selección desbloquea cada nivel al superar el anterior y se saltan los archivos de nivel pendientes.
+- Verificados Debug y Release, las cinco pruebas nativas y la conversión de Tiled. La prueba integrada cubre patrullas y reaparición en Ocean, las estatuas y cinco impactos al jefe, victoria y regreso al menú desde Game Over.
+- Comprobada la carga de las seis pistas y los efectos de sonido. Las pruebas de audio se hicieron con miniaudio sin dispositivo de salida.
+
+# Música y efectos de sonido (5 noviembre 2026)
+
+- Librería: miniaudio 0.11.21 + stb_vorbis (dominio público, un solo archivo cada una) en `libs/miniaudio`.
+  `AudioLibrary.cpp` compila su implementación (avisos silenciados); `Audio.h/.cpp` es la clase del juego
+  (singleton): `playMusic(pista, bucle)`, `stopMusic()`, `stopJingle()` y `play(efecto)`.
+- Archivos en `src/sounds/music` (.ogg, en streaming) y `src/sounds/sfx` (precargados). El vcxproj copia
+  `sounds/` junto al ejecutable. Autores en `src/sounds/Creditos_Audio.txt` y en la pantalla de créditos.
+- Música: menú (menú, instrucciones, créditos y selección), nivel (1-4), jefe (5). Jingles de una vez: nivel
+  superado (al empezar el siguiente; la música del nivel espera a que acabe), game over y victoria. Todo cambio
+  de pantalla corta el jingle anterior (`Game::changeState`); la música de fondo la elige `Game::updateMusic()`.
+- Efectos: poner bomba, explosión, salto, recoger objeto, disparo del Shooter, jugador herido, muerte de
+  enemigo (por fuego o K), puerta abriéndose, estatua aterrizando, jefe herido / teletransporte / disparo,
+  menú mover / elegir (los niveles bloqueados no suenan al elegirlos).
+- Las pruebas automáticas (`--smoke-test`...) arrancan el audio desactivado. Si no hay dispositivo de audio
+  o falta un archivo, se avisa por consola y el juego sigue mudo en esa parte.
+- Créditos: `tools/build_menu.py` añade música y sonidos (líneas a 11 px para que quepan; la fuente no tiene
+  punto, por eso "LUKE RUSTLTD").
+- Verificado: Debug y Release compilan (solo los avisos previos de SOIL/enlazador), cinco pruebas ocultas con
+  código 0, ejecución real sin avisos de carga (y con un archivo quitado a propósito aparece "Audio: falta ...").
+- Créditos de audio completos (menu-select: Fupi, menu-hover: leohpaz, boss-shoots: Vircon32).
+- Probado jugando por el usuario: volúmenes y sonidos dados por buenos. Más adelante, quizá música por mundo.
+
+# Créditos (5 noviembre 2026)
+
+- `tools/build_menu.py`: créditos con "SPRITES: THE SPRITERS RESOURCE" y "SPRITES CUSTOM: HECHOS CON GEMINI".
+  Regenerado `menu-credits.png` (comprobado a la vista: el texto cabe en el recuadro). Las demás imágenes del
+  script salen idénticas.
+
+# Progreso de niveles (5 noviembre 2026)
+
+- Solo se puede elegir un nivel en la selección tras superar el anterior (`Game::unlockedLevel`, empieza en 1).
+  Al completar un nivel se desbloquea el siguiente y se pasa a él. Los bloqueados se ven oscurecidos.
+- Mientras falten niveles, `Game::nextLevel()` salta los que no tienen archivo. Con el mapa de Ocean integrado,
+  la secuencia es Forest → Ocean → Evil → victoria.
+- El progreso dura mientras el juego está abierto (no se guarda en disco).
+- Verificado: Debug y Release compilan, cinco pruebas ocultas con código 0, y captura temporal (retirada) en la
+  que Espacio sobre Evil, bloqueado, no inicia el nivel.
+- Pendiente: teclas 1-5 para saltar de nivel (exigidas por el enunciado), que deberán ignorar el bloqueo.
+
+# Jefe final (5 noviembre 2026)
+
+- `Boss` (`Boss.h/.cpp`): el demonio del mundo Evil de Pocket Bomberman, en el nivel 5 (`Scene::BOSS_LEVEL`).
+  Comportamiento según la descripción del jefe original, con 5 impactos en vez de 9:
+  - Flota despacio (45 u/s) por toda la sala hacia puntos al azar, también bajos: ahí se le alcanza con bombas.
+  - Tras flotar 2.5 s ataca; una vez sí y otra no, antes se teletransporta: parpadea, desaparece y reaparece
+    en otro punto al azar a más de 120 unidades del jugador. Oculto no hace daño ni recibe golpes.
+  - Ataques por turnos, con las alas levantadas: dos bolas grandes que rebotan por la sala 7 s; cuatro bolas
+    en diagonal (en X) que estallan contra el terreno; y una estatua que cae del techo encima del jugador
+    (antes eran dos; reducido a una).
+- 5 vidas (`MAX_HEALTH`). Cada explosión le quita una y queda invulnerable 1.5 s (parpadeo y cara de dolor).
+  Al morir parpadea y se hunde; sus estatuas se rompen y, 3 s después (`Scene::BOSS_VICTORY_DELAY_MS`), se pasa
+  sola a la pantalla de victoria (en la sala del jefe la puerta se abre pero no hace falta entrar). K lo mata.
+- `Statue` (`Statue.h/.cpp`, dibujada con el sprite de la gárgola): parpadea 0.7 s pegada al techo para avisar,
+  cae con gravedad, se queda 4 s en el suelo y se rompe. Solo hace daño mientras cae; en el suelo es inofensiva. Las bombas la rompen antes.
+- `Enemy` gana ganchos: `hitByExplosion()` (por defecto muere; el jefe pierde una vida),
+  `takeSpawnedEnemies()` (el jefe entrega las estatuas; la Scene las añade tras el bucle) y `touches()` virtual.
+- `tools/build_boss.py` genera `boss-atlas.png` (4 fotogramas de 32x32: reposo x2, alas levantadas, herido),
+  `boss-fireball.png` (6 de 16x16: bola y estallido) y `gargoyle-atlas.png` (3 de 16x16), de la última fila de la
+  hoja original Overworld. Se dibujan a escala 2 (jefe 64x64; bolas 32x32 y las grandes 56x56).
+- Arena provisional `levels/level05.txt` (+ `.tmj` para Tiled) generada por `tools/build_boss_arena.py`: sala de
+  10x9 tiles (una pantalla), dos plataformas, arbustos con Fire Up y Bomb Up y la puerta en el centro.
+
+## Verificación del jefe
+- Debug y Release compilan sin avisos. Las cinco pruebas ocultas: código 0 en ambos.
+- Capturas con teclas simuladas en modo G (código temporal, retirado): flota por la sala, lanza las dos bolas
+  grandes que rebotan en paredes, techo y plataformas, se teletransporta, caen las estatuas (una sobre el
+  jugador, otra sobre una plataforma) y dispara las cuatro diagonales.
+- Versión anterior (golpes forzados): muere al quinto, HUD a 0, portal abierto.
+- Pendiente: prueba manual de dificultad y de la muerte con el nuevo comportamiento (constantes en Boss.h/.cpp
+  y Statue.h).
+
+# Terrazas superiores de Ocean (5 noviembre 2026)
+
+- Koopa en fila 8, columna 1. Retirado el arbusto de fila 8, columna 3.
+- Tirador en fila 4, columna 14. El arbusto con Fire Up pasa de fila 4, columna 13 a fila 5, columna 8 y ocupa el extremo de la terraza.
+- Verificados los puntos de aparición, la bomba debajo del arbusto y el acceso al portal tras romperlo. Conversión de Tiled y recursos de Debug y Release comprobados.
+
+# Koopas de Ocean (5 noviembre 2026)
+
+- Reubicado el Koopa en fila 4, columna 14. Añadido un Koopa en fila 16, columna 10. Ocean tiene tres Koopas y dos tiradores.
+- La patrulla al detectar bordes es compartida por ambos tipos en todos los niveles.
+- Verificados la conversión de Tiled, la colisión en los puntos de aparición y la copia a Debug y Release.
+
+# Reloj y patrullas al reaparecer (5 noviembre 2026)
+
+- Cada vida empieza con 4:00. Al perder una vida y reaparecer, se restaura el reloj junto con el escenario.
+- Koopas y tiradores comprueban el apoyo antes de avanzar y giran ante paredes y bordes. Un enemigo colocado en el aire baja en vertical hasta su primera plataforma.
+- Verificados Debug y Release. La prueba de integración recorre las patrullas de Forest y Ocean y comprueba el reloj de 4:00 tras perder una vida.
+
+# Ocean poblado y reaparición (5 noviembre 2026)
+
+- Ocean tiene seis objetos ocultos, dos Koopas y dos tiradores. Las posiciones se editan en OBJECTS y se guardan en ITEMS y ENEMIES.
+- El Koopa de fila 22, columna 14 queda protegido por la cascada hasta abrirla. El tirador de fila 28, columna 14 cabe bajo el extremo elevado del muelle. El arbusto de ese extremo pasa a fila 25, columna 13.
+- Bombas con 2 s de mecha y 0,4 s de fuego. Máximo de 4 bombas simultáneas y 4 casillas de alcance por dirección.
+- Al perder una vida y reaparecer se restauran enemigos, contador, arbustos, objetos, cascadas y portal. Se conservan las mejoras y el tiempo restante.
+- Verificados Tiled, rutas de Ocean, tiempos de bombas y físicas. Debug y Release superan las cinco pruebas nativas.
+- Prueba de integración con selección de Ocean, apertura del recinto, recogida y topes de mejoras, reaparición completa y fin de la tercera vida.
+
+# Ocean, nivel 2 (5 noviembre 2026)
+
+- Mapa vertical de 16×30 con el atlas World 1, diez arbustos, una cascada retráctil y portal en (10, 4).
+- level02.tmj editable y level02.txt convertido. Ocean aparece disponible desde Jugar.
+- Inicio provisional en (2, 28), con cero objetos y cero enemigos. Los enemigos fijos pertenecen a Forest.
+- Vista con coordenadas en level02-preview.png. Pendiente fijar inicio, objetos y enemigos.
+- Verificado con las físicas reales el acceso al portal, a la cabecera de la cascada y a los diez arbustos.
+- Debug y Release compilados. Arranque correcto y selección de Ocean comprobada desde el menú.
+
 # Limpieza (5 noviembre 2026)
 
 - `Screen` reduce con GL_LINEAR (MinFilter) y amplía con GL_NEAREST: los JPEG de 1061x1008 (menú, game over,

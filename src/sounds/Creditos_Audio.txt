@@ -1,0 +1,22 @@
+Creditos:
+level Louswan
+menu mrpoly
+boss Matthew Pablo
+game over Kistol
+victory jobromedia
+level clear jkfite01
+
+place bomb themightyglider
+explote bomb Luke.RUSTLTD
+jump Vircon32
+get powerup Vircon32
+Shooter Vircon32
+Player hit Vircon32
+enemy death Vircon32
+open door Vircon32
+statue land Vircon32
+boss hurt Vircon32
+boss tp Vircon32
+boss shoots Vircon32
+menu select Fupi
+menu hover leohpaz

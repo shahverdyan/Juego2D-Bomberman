@@ -12,9 +12,9 @@ public:
     };
 
     enum { 
-        DEFAULT_FUSE_MS = 3000, 
+        DEFAULT_FUSE_MS = 2000,
         DEFAULT_FIRE_RANGE = 1,
-        DEFAULT_EXPLOSION_MS = 500 
+        DEFAULT_EXPLOSION_MS = 400
     };
 
     Bomb(int x, int y, int tileSize, int fuseDurationMs = DEFAULT_FUSE_MS,

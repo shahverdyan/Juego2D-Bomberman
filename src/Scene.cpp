@@ -5,6 +5,7 @@
 #include <stdexcept>
 #include <glm/gtc/matrix_transform.hpp>
 #include "Scene.h"
+#include "Audio.h"
 #include "Game.h"
 
 Scene::Scene() {
@@ -20,6 +21,10 @@ Scene::Scene() {
     shooterBulletTexture = NULL;
     walkerTexture = NULL;
     booTexture = NULL;
+    bossTexture = NULL;
+    bossFireballTexture = NULL;
+    statueTexture = NULL;
+    boss = NULL;
     doorTexture = NULL;
     itemTexture = NULL;
     itemSprite = NULL;
@@ -49,6 +54,10 @@ void Scene::shutdown() {
     delete shooterBulletTexture; shooterBulletTexture = NULL;
     delete walkerTexture; walkerTexture = NULL;
     delete booTexture; booTexture = NULL;
+    delete bossTexture; bossTexture = NULL;
+    delete bossFireballTexture; bossFireballTexture = NULL;
+    delete statueTexture; statueTexture = NULL;
+    boss = NULL;
     delete doorTexture; doorTexture = NULL;
 
     delete itemSprite; itemSprite = NULL;
@@ -125,6 +134,10 @@ void Scene::init() {
         throw std::runtime_error("Cannot load images/boo-atlas.png");
     booTexture->setMinFilter(GL_NEAREST);
     booTexture->setMagFilter(GL_NEAREST);
+    // Jefe final, sus bolas de fuego y sus estatuas (sprite de gárgola): tools/build_boss.py.
+    bossTexture = loadSpriteTexture("images/boss-atlas.png");
+    bossFireballTexture = loadSpriteTexture("images/boss-fireball.png");
+    statueTexture = loadSpriteTexture("images/gargoyle-atlas.png");
 
     spawnEnemies();
 
@@ -164,39 +177,62 @@ void Scene::init() {
     update(0);
 }
 
-// Crea los enemigos del nivel (provisional: posiciones fijas hasta que el nivel las defina).
-// Cada spawn: {columna, fila del suelo, mira a la izquierda}.
+// La fila de Shooter y Koopa indica la celda de sus pies. Boo usa la esquina superior.
 void Scene::spawnEnemies() {
-    struct Spawn { int tileX, floorRow; bool facingLeft; };
+    boss = NULL;
+    if (level == BOSS_LEVEL) {
+        spawnBoss();
+        return;
+    }
+
+    using Kind = LevelData::EnemyKind;
+    // Posiciones originales de Forest para mapas anteriores a la sección ENEMIES.
+    static const std::vector<LevelData::EnemySpawn> forestSpawns = {
+        {14, 24, Kind::Shooter, false}, {24, 9, Kind::Shooter, true},
+        {42, 24, Kind::Koopa, true}, {16, 16, Kind::Koopa, false},
+        {20, 15, Kind::Boo, true}, {38, 5, Kind::Boo, true}
+    };
+    const auto& spawns = level == 1 && !map->hasEnemySpawns() ? forestSpawns : map->getEnemySpawns();
     const float tileSize = float(map->getTileSize());
-
-    // Shooters: pasillo inferior y repisa superior.
-    const Spawn shooterSpawns[] = { { 14, 25, false }, { 24, 10, true } };
-    for (const Spawn& spawn : shooterSpawns) {
-        const glm::vec2 position(spawn.tileX * tileSize, spawn.floorRow * tileSize - Shooter::HEIGHT);
-        Shooter* shooter = new Shooter(position, spawn.facingLeft);
-        shooter->init(shooterTexture, shooterBulletTexture, texProgram);
-        enemies.push_back(shooter);
-    }
-
-    // Walkers: suelo derecho y plataforma central (de esta se cae por el borde).
-    const Spawn walkerSpawns[] = { { 42, 25, true }, { 16, 17, false } };
-    for (const Spawn& spawn : walkerSpawns) {
-        const glm::vec2 position(spawn.tileX * tileSize, spawn.floorRow * tileSize - Walker::HEIGHT);
-        Walker* walker = new Walker(position, spawn.facingLeft);
-        walker->init(walkerTexture, texProgram);
-        enemies.push_back(walker);
-    }
-
-    // Boos: flotan en zonas abiertas. Cada spawn: {columna, fila de la hitbox}.
-    const Spawn booSpawns[] = { { 20, 15, true }, { 38, 5, true } };
-    for (const Spawn& spawn : booSpawns) {
-        Boo* boo = new Boo(glm::vec2(spawn.tileX * tileSize, spawn.floorRow * tileSize), spawn.facingLeft);
-        boo->init(booTexture, texProgram);
-        enemies.push_back(boo);
+    for (const auto& spawn : spawns) {
+        const float x = spawn.x * tileSize;
+        const float feet = (spawn.y + 1) * tileSize;
+        switch (spawn.kind) {
+        case Kind::Shooter: {
+            auto* shooter = new Shooter(glm::vec2(x, feet - Shooter::HEIGHT), spawn.facingLeft);
+            shooter->init(shooterTexture, shooterBulletTexture, texProgram);
+            enemies.push_back(shooter);
+            break;
+        }
+        case Kind::Koopa: {
+            auto* koopa = new Walker(glm::vec2(x, feet - Walker::HEIGHT), spawn.facingLeft);
+            koopa->init(walkerTexture, texProgram);
+            enemies.push_back(koopa);
+            break;
+        }
+        case Kind::Boo: {
+            auto* boo = new Boo(glm::vec2(x, spawn.y * tileSize), spawn.facingLeft);
+            boo->init(booTexture, texProgram);
+            enemies.push_back(boo);
+            break;
+        }
+        }
     }
 
     for (Enemy* enemy : enemies) enemy->setTileMap(map);
+}
+
+// Último nivel: solo el jefe. Flota por toda la sala, entre las paredes, el techo
+// y el suelo (la sala tiene un tile de borde sólido por cada lado).
+void Scene::spawnBoss() {
+    const float tileSize = float(map->getTileSize());
+    const glm::ivec2 size = map->getPixelSize();
+    const float minX = tileSize, maxX = size.x - tileSize - Boss::WIDTH;
+    const float minY = tileSize, maxY = size.y - tileSize - Boss::HEIGHT;
+    boss = new Boss(glm::vec2((minX + maxX) / 2.f, minY), minX, maxX, minY, maxY);
+    boss->init(bossTexture, bossFireballTexture, statueTexture, texProgram);
+    boss->setTileMap(map);
+    enemies.push_back(boss);
 }
 
 // Objetos escondidos en arbustos del nivel 1 (provisional: posiciones fijas).
@@ -235,6 +271,7 @@ void Scene::pickUpItems() {
         case ITEM_STAR:    player->startStar(); break;
         default: break;
         }
+        Audio::instance().play(Audio::POWER_UP);
         it = items.erase(it);
     }
 }
@@ -243,7 +280,9 @@ void Scene::pickUpItems() {
 // muerte. Al terminarla, update() lo hace reaparecer o acaba la partida.
 void Scene::damagePlayer() {
     if (invulnerableMode || !player->canBeHurt()) return;
-    if (player->takeHit() != PlayerHealth::Damage::LifeLost) return;
+    const PlayerHealth::Damage damage = player->takeHit();
+    if (damage != PlayerHealth::Damage::Ignored) Audio::instance().play(Audio::PLAYER_HIT);
+    if (damage != PlayerHealth::Damage::LifeLost) return;
     player->startDying();
 }
 
@@ -274,21 +313,24 @@ void Scene::startLevel(int number) {
     loadLevel();
 }
 
-// Carga (o recarga) el nivel actual: mapa, enemigos, objetos, puerta y tiempo.
-// Los enemigos aún tienen posiciones fijas del nivel 1 (spawnEnemies).
+// Reconstruye el escenario a partir del archivo y conserva los atributos del jugador.
 void Scene::loadLevel() {
+    TileMap* nextMap = TileMap::createTileMap(levelFile(level), glm::vec2(0, 0), texProgram);
     for (Enemy* enemy : enemies) delete enemy;
     enemies.clear();
     delete map;
-    map = TileMap::createTileMap(levelFile(level), glm::vec2(0, 0), texProgram);
+    map = nextMap;
     result = RUNNING;
     timeUp = false;
+    timeLeftMs = LEVEL_TIME_SECONDS * 1000;
+    victoryDelayMs = -1;
     player->setTileMap(map);
     spawnEnemies();
     spawnItems();
     setupDoor();
-    resetPlayer();
-    timeLeftMs = LEVEL_TIME_SECONDS * 1000;
+    bombs.clear();
+    player->setPosition(map->getSpawn());
+    updateCamera();
 }
 
 // Coloca la puerta cerrada sobre el marcador del mapa. El marcador es la casilla
@@ -303,6 +345,7 @@ void Scene::setupDoor() {
 
 // Tecla K: mata a todos los enemigos (y sus balas). La puerta se abrirá sola.
 void Scene::killAllEnemies() {
+    if (aliveEnemies() > 0) Audio::instance().play(Audio::ENEMY_DEATH);
     for (Enemy* enemy : enemies) enemy->kill();
 }
 
@@ -315,7 +358,7 @@ void Scene::update(int deltaTime) {
         player->updateDeath(deltaTime);
         if (player->deathFinished()) {
             if (timeUp || player->getLives() <= 0) result = GAME_OVER;
-            else player->setPosition(map->getSpawn());
+            else loadLevel();
         }
         return;
     }
@@ -335,8 +378,6 @@ void Scene::update(int deltaTime) {
     pickUpItems();
 
     // Daño al jugador: bala, contacto con un enemigo o fuego de una explosión.
-    // Primero se recoge si hay daño y después se aplica, porque damagePlayer()
-    // puede reiniciar el nivel y borrar los enemigos.
     const movement::Body& playerBody = player->getBody();
     bool playerHurt = false;
     for (Enemy* enemy : enemies) {
@@ -351,9 +392,24 @@ void Scene::update(int deltaTime) {
     if (touchesFire(playerBody)) playerHurt = true;
     if (playerHurt) damagePlayer();
 
+    // Enemigos nuevos (estatuas que invoca el jefe). Se añaden fuera del bucle
+    // anterior porque no se puede modificar un vector mientras se recorre.
+    std::vector<Enemy*> spawned;
+    for (Enemy* enemy : enemies) enemy->takeSpawnedEnemies(spawned);
+    for (Enemy* enemy : spawned) {
+        enemy->setTileMap(map);
+        enemies.push_back(enemy);
+    }
+    // Al morir el jefe, sus estatuas se rompen y empieza la cuenta atrás de la victoria.
+    if (boss != NULL && boss->isDying()) {
+        for (Enemy* enemy : enemies) enemy->kill();
+        if (victoryDelayMs < 0) victoryDelayMs = BOSS_VICTORY_DELAY_MS;
+    }
+
     // Se borran los enemigos cuya animación de muerte ha terminado.
     for (auto it = enemies.begin(); it != enemies.end();) {
         if ((*it)->isDead()) {
+            if (*it == boss) boss = NULL;
             delete *it;
             it = enemies.erase(it);
         } else {
@@ -363,10 +419,16 @@ void Scene::update(int deltaTime) {
     if (player->isDying()) return;  // a partir del siguiente frame, animación de muerte
 
     // Puerta: se abre al no quedar enemigos vivos; abierta, el jugador completa el nivel.
+    // En la sala del jefe no hace falta entrar: la victoria llega sola unos segundos
+    // después de vencerlo, para que se vea su muerte.
     if (levelHasDoor) {
         if (aliveEnemies() == 0) door.open();
         door.update(deltaTime);
-        if (door.isOpen() && door.contains(player->getBody())) result = LEVEL_COMPLETED;
+        if (level != BOSS_LEVEL && door.isOpen() && door.contains(player->getBody())) result = LEVEL_COMPLETED;
+    }
+    if (victoryDelayMs >= 0) {
+        victoryDelayMs -= deltaTime;
+        if (victoryDelayMs <= 0) result = LEVEL_COMPLETED;
     }
 
     // Tiempo límite: al llegar a 0 la partida se pierde directamente, sin importar
@@ -382,6 +444,10 @@ void Scene::update(int deltaTime) {
         }
     }
 
+    updateCamera();
+}
+
+void Scene::updateCamera() {
     const glm::vec2 pos = player->getPosition();
     const glm::ivec2 size = map->getPixelSize();
     auto camera = view::follow(pos.x,pos.y,size.x,size.y,map->getTileSize());
@@ -407,10 +473,12 @@ void Scene::placeBomb() {
     if (!map->isSolid(bombX / tileSize, bombY / tileSize) && !alreadyPlaced && player->canPlaceBomb(activeBombCount)) {
         bombs.emplace_back(bombX, bombY, tileSize, Bomb::DEFAULT_FUSE_MS, player->getFireRange());
         bombs.back().allowOwnerExit(body.x,body.y,body.width,body.height);
+        Audio::instance().play(Audio::BOMB_PLACE);
     }
 }
 
 void Scene::detonate(Bomb& bomb) {
+    Audio::instance().play(Audio::EXPLOSION);
     const int tileSize = map->getTileSize();
     const int centerX = bomb.getX() / tileSize;
     const int centerY = bomb.getY() / tileSize;
@@ -472,7 +540,7 @@ void Scene::detonate(Bomb& bomb) {
     bomb.setBlastCells(blastCells);
 }
 
-// ¿Toca el cuerpo alguna celda de una explosión activa (dura 0.5 s)?
+// ¿Toca el cuerpo alguna celda de una explosión activa?
 bool Scene::touchesFire(const movement::Body& body) const {
     const float tileSize = float(map->getTileSize());
     for (const Bomb& bomb : bombs) {
@@ -487,11 +555,23 @@ bool Scene::touchesFire(const movement::Body& body) const {
     return false;
 }
 
-// Cualquier enemigo que toque el fuego muere: se borra (con sus balas, si tiene).
-// El fuego mata a los enemigos que toca: empiezan su animación de muerte.
+// El fuego daña a los enemigos que toca: la mayoría mueren (empiezan su animación
+// de muerte); el jefe solo pierde una vida.
 void Scene::killEnemiesInBlast() {
-    for (Enemy* enemy : enemies)
-        if (!enemy->isDying() && touchesFire(enemy->getBody())) enemy->kill();
+    for (Enemy* enemy : enemies) {
+        if (enemy->isDying() || !touchesFire(enemy->getBody())) continue;
+        enemy->hitByExplosion();
+        if (enemy->isDying()) Audio::instance().play(Audio::ENEMY_DEATH);  // el jefe puede seguir vivo
+    }
+}
+
+Texture* Scene::loadSpriteTexture(const std::string& file) {
+    Texture* texture = new Texture();
+    if (!texture->loadFromFile(file, TEXTURE_PIXEL_FORMAT_RGBA))
+        throw std::runtime_error("Cannot load " + file);
+    texture->setMinFilter(GL_NEAREST);
+    texture->setMagFilter(GL_NEAREST);
+    return texture;
 }
 
 void Scene::render() {

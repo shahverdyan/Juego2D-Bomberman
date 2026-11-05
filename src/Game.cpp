@@ -19,9 +19,7 @@ void Game::init()
 	credits->init("images/menu-credits.png", scene.getShaderProgram());
 	levelSelect = new LevelSelect();
 	levelSelect->init(scene.getShaderProgram());
-	// Solo se pueden elegir los niveles cuyo archivo existe.
-	for (int level = 1; level <= LevelSelect::LEVEL_COUNT; ++level)
-		levelSelect->setAvailable(level, Scene::levelExists(level));
+	refreshLevelSelect();
 	gameOver = new Screen();
 	gameOver->init("images/game-over.jpeg", scene.getShaderProgram());
 	victory = new Screen();
@@ -48,13 +46,15 @@ void Game::init()
 void Game::changeState(GameState newState)
 {
 	state = newState;
+	Audio::instance().stopJingle();  // el jingle de la pantalla anterior no sigue sonando
 	for (bool& key : pressed) key = false;
 }
 
 // Empieza un fundido a negro. El cambio se aplica cuando la pantalla está negra.
-void Game::fadeTo(GameState newState, int newLevel, bool newGame)
+void Game::fadeTo(GameState newState, int newLevel, bool newGame, Audio::Music jingle)
 {
 	pendingState = newState;
+	pendingJingle = jingle;
 	pendingLevel = newLevel;
 	pendingNewGame = newGame;
 	fadePhase = FADE_OUT;
@@ -68,10 +68,50 @@ void Game::applyPendingChange()
 		else scene.startLevel(pendingLevel);
 	}
 	changeState(pendingState);
+	if (pendingJingle != Audio::NO_MUSIC) Audio::instance().playMusic(pendingJingle, false);
+}
+
+// Música de fondo de cada pantalla. Si suena un jingle se espera a que acabe:
+// así, al pasar de nivel, primero suena la fanfarria y después la música del nivel.
+void Game::updateMusic()
+{
+	Audio& audio = Audio::instance();
+	if (audio.isJinglePlaying()) return;
+	Audio::Music music = Audio::NO_MUSIC;  // game over y victoria: solo su jingle
+	if (state == MENU || state == INSTRUCTIONS || state == CREDITS || state == LEVEL_SELECT)
+		music = Audio::MENU_MUSIC;
+	else if (state == PLAYING)
+		music = scene.getLevel() == Scene::BOSS_LEVEL ? Audio::BOSS_MUSIC : Audio::LEVEL_MUSIC;
+	if (music == Audio::NO_MUSIC) audio.stopMusic();
+	else audio.playMusic(music, true);  // no hace nada si ya suena
+}
+
+// Siguiente nivel con archivo. Mientras falten niveles intermedios se saltan,
+// para que el último (el jefe) siga siendo alcanzable.
+int Game::nextLevel(int level)
+{
+	for (int next = level + 1; next <= LevelSelect::LEVEL_COUNT; ++next)
+		if (Scene::levelExists(next)) return next;
+	return 0;
+}
+
+void Game::unlockLevel(int level)
+{
+	if (level > unlockedLevel) unlockedLevel = level;
+	refreshLevelSelect();
+}
+
+// Se pueden elegir los niveles que existen y ya están desbloqueados.
+void Game::refreshLevelSelect()
+{
+	for (int level = 1; level <= LevelSelect::LEVEL_COUNT; ++level)
+		levelSelect->setAvailable(level, Scene::levelExists(level) && level <= unlockedLevel);
 }
 
 bool Game::update(int deltaTime)
 {
+	updateMusic();
+
 	// Durante un fundido solo avanza la transición.
 	if (fadePhase != NO_FADE) {
 		fadeMs += deltaTime;
@@ -119,15 +159,21 @@ bool Game::update(int deltaTime)
 		if (consumeKey(GLFW_KEY_G)) scene.toggleInvulnerability();
 		if (consumeKey(GLFW_KEY_K)) scene.killAllEnemies();
 		scene.update(deltaTime);
-		if (scene.getResult() == Scene::GAME_OVER) fadeTo(GAME_OVER);
+		if (scene.getResult() == Scene::GAME_OVER) fadeTo(GAME_OVER, 0, false, Audio::GAME_OVER_JINGLE);
 		else if (scene.getResult() == Scene::LEVEL_COMPLETED) {
-			// Pasa al siguiente nivel; si no hay más, se ha ganado la partida.
-			const int next = scene.getLevel() + 1;
-			if (Scene::levelExists(next)) fadeTo(PLAYING, next);
-			else fadeTo(VICTORY);
+			// Desbloquea y pasa al siguiente nivel; si no hay más, se ha ganado la partida.
+			const int next = nextLevel(scene.getLevel());
+			if (next != 0) {
+				unlockLevel(next);
+				fadeTo(PLAYING, next, false, Audio::LEVEL_CLEAR_JINGLE);
+			}
+			else fadeTo(VICTORY, 0, false, Audio::VICTORY_JINGLE);
 		}
 		break;
 	case GAME_OVER:
+        if (consumeKey(GLFW_KEY_ESCAPE) | consumeKey(GLFW_KEY_SPACE) | consumeKey(GLFW_KEY_ENTER))
+            fadeTo(MENU);
+        break;
 	case VICTORY:
 		if (consumeKey(GLFW_KEY_ESCAPE) | consumeKey(GLFW_KEY_SPACE) | consumeKey(GLFW_KEY_ENTER))
 			fadeTo(LEVEL_SELECT);

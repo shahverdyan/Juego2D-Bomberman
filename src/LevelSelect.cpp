@@ -1,6 +1,7 @@
 #include <stdexcept>
 #include <GL/glew.h>
 #include "LevelSelect.h"
+#include "Audio.h"
 #include "Game.h"
 
 // level-select.png mide 160x152 y se dibuja a escala 4, como la partida.
@@ -47,10 +48,14 @@ int LevelSelect::update() {
     // Las dos teclas se consumen siempre para que no queden pulsaciones pendientes.
     const bool up = game.consumeKey(GLFW_KEY_UP) | game.consumeKey(GLFW_KEY_W);
     const bool down = game.consumeKey(GLFW_KEY_DOWN) | game.consumeKey(GLFW_KEY_S);
+    const int before = selected;
     if (up && selected < LEVEL_COUNT) ++selected;
     if (down && selected > 1) --selected;
+    if (selected != before) Audio::instance().play(Audio::MENU_MOVE);
     const bool choose = game.consumeKey(GLFW_KEY_SPACE) | game.consumeKey(GLFW_KEY_ENTER);
-    return (choose && available[selected - 1]) ? selected : NO_CHOICE;
+    if (!choose || !available[selected - 1]) return NO_CHOICE;  // los bloqueados no suenan
+    Audio::instance().play(Audio::MENU_SELECT);
+    return selected;
 }
 
 void LevelSelect::render() {

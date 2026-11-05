@@ -4,6 +4,7 @@
 
 #include <GLFW/glfw3.h>
 #include "Scene.h"
+#include "Audio.h"
 #include "Menu.h"
 #include "LevelSelect.h"
 #include "Screen.h"
@@ -60,15 +61,26 @@ private:
 	// Mientras dura no se actualiza nada.
 	static const int FADE_MS = 300;
 	enum FadePhase { NO_FADE, FADE_OUT, FADE_IN };
-	void fadeTo(GameState newState, int newLevel = 0, bool newGame = false);
+	// jingle: pista que suena una vez al llegar al nuevo estado (nivel superado, game over...).
+	void fadeTo(GameState newState, int newLevel = 0, bool newGame = false,
+		Audio::Music jingle = Audio::NO_MUSIC);
 	void applyPendingChange();
 	void renderFade();
+
+	// Progreso: solo se puede elegir un nivel tras superar el anterior.
+	// unlockedLevel es el nivel más alto desbloqueado (se pierde al cerrar el juego).
+	static int nextLevel(int level);  // siguiente nivel que existe, o 0 si no hay más
+	void unlockLevel(int level);
+	void refreshLevelSelect();
+	void updateMusic();
+	int unlockedLevel = 1;
 
 	FadePhase fadePhase = NO_FADE;
 	int fadeMs = 0;
 	GameState pendingState = MENU;
 	int pendingLevel = 0;         // nivel a cargar en mitad del fundido (0 = ninguno)
 	bool pendingNewGame = false;  // true: partida nueva (vidas y mejoras iniciales)
+	Audio::Music pendingJingle = Audio::NO_MUSIC;
 	Texture* fadeTexture = nullptr;
 	Sprite* fadeSprite = nullptr;  // cuadro negro del tamaño de la ventana
 

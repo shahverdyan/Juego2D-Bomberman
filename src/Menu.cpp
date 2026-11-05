@@ -1,6 +1,7 @@
 #include <stdexcept>
 #include <GL/glew.h>
 #include "Menu.h"
+#include "Audio.h"
 #include "Game.h"
 
 // Posición del texto de la primera opción y separación entre opciones, en píxeles
@@ -38,7 +39,9 @@ int Menu::update(int deltaTime) {
     const bool down = game.consumeKey(GLFW_KEY_DOWN) | game.consumeKey(GLFW_KEY_S);
     if (up) selected = (selected + OPTION_COUNT - 1) % OPTION_COUNT;
     if (down) selected = (selected + 1) % OPTION_COUNT;
+    if (up || down) Audio::instance().play(Audio::MENU_MOVE);
     const bool choose = game.consumeKey(GLFW_KEY_SPACE) | game.consumeKey(GLFW_KEY_ENTER);
+    if (choose) Audio::instance().play(Audio::MENU_SELECT);
     return choose ? selected : NO_CHOICE;
 }
 

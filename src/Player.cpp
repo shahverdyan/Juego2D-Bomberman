@@ -4,6 +4,7 @@
 #include <stdexcept>
 #include <GL/glew.h>
 #include "Player.h"
+#include "Audio.h"
 #include "Game.h"
 
 
@@ -81,6 +82,7 @@ bool Player::update(int deltaTime, std::vector<Bomb>& bombs)
         else bomb.updateOwnerExit(body.x,body.y,body.width,body.height);
     }
     refreshBombExit = false;
+    const bool wasGrounded = body.grounded;
     movement::tick(body, direction, jump, deltaTime / 1000.f, map->getTileSize(),
         [this,&bombs](int x,int y) {
             if (map->isSolid(x,y)) return true;
@@ -88,6 +90,8 @@ bool Player::update(int deltaTime, std::vector<Bomb>& bombs)
             return false;
         });
     for (Bomb& bomb : bombs) bomb.updateOwnerExit(body.x,body.y,body.width,body.height);
+    // Ha saltado si estaba en el suelo, pulsó saltar y ahora sube.
+    if (jump && wasGrounded && body.vy < 0.f) Audio::instance().play(Audio::JUMP);
     if (direction != 0) facingLeft = direction < 0;
     const int side = facingLeft ? 0 : 1;
     int anim = (direction ? MOVE_LEFT : STAND_LEFT) + side;
@@ -144,6 +148,7 @@ void Player::setTileMap(TileMap *tileMap)
 
 void Player::setPosition(const glm::vec2 &pos)
 {
+	if (dying) sprite->changeAnimation(facingLeft ? STAND_LEFT : STAND_RIGHT);
 	dying = false;  // reaparecer termina la animación de muerte
 	body.x = pos.x; body.y = pos.y; body.vx = body.vy = 0; body.grounded = false;
 	sprite->setPosition(glm::vec2(float(tileMapDispl.x + body.x), float(tileMapDispl.y + body.y)));

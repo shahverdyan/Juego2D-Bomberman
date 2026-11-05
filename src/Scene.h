@@ -14,6 +14,7 @@
 #include "Shooter.h"
 #include "Walker.h"
 #include "Boo.h"
+#include "Boss.h"
 #include "Door.h"
 #include "Hud.h"
 #include "Item.h"
@@ -50,6 +51,7 @@ public:
 
     // Niveles 1..LEVEL_COUNT, en levels/levelNN.txt.
     static const int LEVEL_COUNT = 5;
+    static const int BOSS_LEVEL = LEVEL_COUNT;  // el último nivel es la sala del jefe
     static std::string levelFile(int number);
     static bool levelExists(int number);
     // Partida nueva desde la selección de nivel: jugador con sus valores iniciales.
@@ -64,12 +66,16 @@ public:
 
     // Tiempo límite del nivel. Cambiar aquí (los niveles futuros serán más pequeños).
     static const int LEVEL_TIME_SECONDS = 4 * 60;
+    // Pausa entre la muerte del jefe y la pantalla de victoria.
+    static const int BOSS_VICTORY_DELAY_MS = 3000;
 
 private:
     void initShaders();
     void detonate(Bomb& bomb);
     void placeBomb();
     void spawnEnemies();
+    void spawnBoss();
+    static Texture* loadSpriteTexture(const std::string& file);  // con filtro nearest
     void spawnItems();
     void pickUpItems();
     bool touchesFire(const movement::Body& body) const;
@@ -78,6 +84,7 @@ private:
     int aliveEnemies() const;
     void loadLevel();
     void setupDoor();
+    void updateCamera();
 
     TileMap* map;
     Player* player;
@@ -98,6 +105,11 @@ private:
     Texture* shooterBulletTexture;
     Texture* walkerTexture;
     Texture* booTexture;
+    Texture* bossTexture;
+    Texture* bossFireballTexture;
+    Texture* statueTexture;
+    Boss* boss;  // el jefe del último nivel (también está en enemies); NULL si no hay
+    int victoryDelayMs = -1;  // cuenta atrás tras vencer al jefe; -1 si no ha empezado
 
     // Objetos escondidos en arbustos (Fire Up, Bomb Up, corazón, estrella).
     std::vector<Item> items;

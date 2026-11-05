@@ -27,20 +27,21 @@ void Enemy::applyGravity(float seconds) {
         [this](int x, int y) { return map->isSolid(x, y); });
 }
 
-bool Enemy::walk(float speed, float seconds) {
-    const float step = (facingLeft ? -speed : speed) * seconds;
-    const float before = body.x;
-    movement::moveAxis(body, step, true, map->getTileSize(),
-        [this](int x, int y) { return map->isSolid(x, y); });
-    return std::abs(body.x - before) < std::abs(step) - 0.001f;
-}
-
-bool Enemy::floorAhead() const {
+void Enemy::patrolGround(float speed, float seconds) {
+    if (!body.grounded || seconds <= 0.f) return;
     const int tileSize = map->getTileSize();
-    const float frontX = facingLeft ? body.x - 1.f : body.x + body.width;
-    const int tileX = int(std::floor(frontX / tileSize));
-    const int tileY = int(std::floor((body.y + body.height) / tileSize));
-    return map->isSolid(tileX, tileY);
+    const int feetRow = int(std::floor((body.y + body.height) / tileSize));
+    const auto solid = [this](int x, int y) { return map->isSolid(x, y); };
+    const auto tryStep = [&](float step) {
+        // Comprueba el suelo bajo el pie delantero después del paso.
+        const float frontX = body.x + step + (step > 0.f ? body.width - 0.001f : 0.f);
+        if (!solid(int(std::floor(frontX / tileSize)), feetRow)) return false;
+        const float before = body.x;
+        movement::moveAxis(body, step, true, tileSize, solid);
+        return body.x != before;
+    };
+    const float step = (facingLeft ? -speed : speed) * seconds;
+    if (!tryStep(step) && tryStep(-step)) facingLeft = !facingLeft;
 }
 
 void Enemy::updateSprite(int deltaTime, int anim) {
