@@ -144,6 +144,7 @@ void Player::setTileMap(TileMap *tileMap)
 
 void Player::setPosition(const glm::vec2 &pos)
 {
+	if (dying) sprite->changeAnimation(facingLeft ? STAND_LEFT : STAND_RIGHT);
 	dying = false;  // reaparecer termina la animación de muerte
 	body.x = pos.x; body.y = pos.y; body.vx = body.vy = 0; body.grounded = false;
 	sprite->setPosition(glm::vec2(float(tileMapDispl.x + body.x), float(tileMapDispl.y + body.y)));

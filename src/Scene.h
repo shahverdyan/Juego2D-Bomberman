@@ -78,6 +78,7 @@ private:
     int aliveEnemies() const;
     void loadLevel();
     void setupDoor();
+    void updateCamera();
 
     TileMap* map;
     Player* player;

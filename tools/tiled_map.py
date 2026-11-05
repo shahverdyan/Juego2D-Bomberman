@@ -5,6 +5,8 @@ import os
 from pathlib import Path
 
 DEFAULT_ITEMS = [(3, 24, 0), (4, 22, 1), (11, 20, 2), (15, 16, 3)]
+ITEM_NAMES = ['Fire Up', 'Bomb Up', 'Heart', 'Armored Jacket']
+ENEMY_NAMES = ['Shooter', 'Koopa', 'Boo']
 
 
 def read_level(path):
@@ -29,14 +31,24 @@ def read_level(path):
             cells.extend(row)
         layers[name] = cells
         cursor += h
-    items = DEFAULT_ITEMS
-    if cursor < len(lines):
-        tag, count = lines[cursor].split()
-        if tag != 'ITEMS':
-            raise ValueError('Unknown optional section')
-        items = [tuple(map(int, line.split())) for line in lines[cursor+1:cursor+1+int(count)]]
+    sections = {}
+    while cursor < len(lines):
+        tag, count_text = lines[cursor].split()
+        if tag not in ('ITEMS', 'ENEMIES') or tag in sections:
+            raise ValueError('Invalid optional section: ' + tag)
+        count = int(count_text)
+        cursor += 1
+        if not 0 <= count <= w*h or cursor + count > len(lines):
+            raise ValueError('Invalid count for ' + tag)
+        field_count = 3 if tag == 'ITEMS' else 4
+        rows_data = [tuple(map(int, line.split())) for line in lines[cursor:cursor+count]]
+        if any(len(row) != field_count for row in rows_data):
+            raise ValueError('Invalid record in ' + tag)
+        sections[tag] = rows_data
+        cursor += count
     return dict(width=w, height=h, size=size, block=block, atlas=lines[3],
-                columns=cols, rows=rows, spawn=spawn, layers=layers, items=items)
+                columns=cols, rows=rows, spawn=spawn, layers=layers,
+                items=sections.get('ITEMS', DEFAULT_ITEMS), enemies=sections.get('ENEMIES'))
 
 
 def export_tiled(source, target):
@@ -55,9 +67,14 @@ def export_tiled(source, target):
     objects = [dict(id=1, name='spawn', type='player', point=True,
                     x=level['spawn'][0]*tile, y=level['spawn'][1]*tile, rotation=0)]
     for x, y, item_type in level['items']:
-        objects.append(dict(id=len(objects)+1, name=['Fire Up','Bomb Up','Heart','Star'][item_type],
+        objects.append(dict(id=len(objects)+1, name=ITEM_NAMES[item_type],
                             type='item', point=True, x=x*tile, y=y*tile, rotation=0,
                             properties=[dict(name='itemType', type='int', value=item_type)]))
+    for x, y, enemy_type, left in level['enemies'] or []:
+        objects.append(dict(id=len(objects)+1, name=ENEMY_NAMES[enemy_type],
+                            type='enemy', point=True, x=x*tile, y=y*tile, rotation=0,
+                            properties=[dict(name='enemyType', type='int', value=enemy_type),
+                                        dict(name='facingLeft', type='bool', value=bool(left))]))
     layers.append(dict(id=4, name='OBJECTS', type='objectgroup', visible=True, opacity=1,
                        draworder='topdown', objects=objects))
     data = dict(type='map', version='1.10', orientation='orthogonal', renderorder='right-down',
@@ -69,6 +86,8 @@ def export_tiled(source, target):
                                imagewidth=level['columns']*tile, imageheight=level['rows']*tile,
                                tilewidth=tile, tileheight=tile, columns=level['columns'],
                                tilecount=level['columns']*level['rows'], margin=0, spacing=0)])
+    if level['enemies'] is not None:
+        data['properties'].append(dict(name='useMapEnemies', type='bool', value=True))
     target.write_text(json.dumps(data, indent=2)+'\n', encoding='utf-8')
 
 
@@ -111,9 +130,18 @@ def import_tiled(source, target):
     objects = layers.get('OBJECTS', {}).get('objects', [])
     spawn = None
     items = []
+    enemies = []
+
+    def solid(x, y):
+        if not (0 <= x < w and 0 <= y < h):
+            return True
+        i = y*w+x
+        return bool(cells['COLLISION'][i]) or any(cells[n][i] in (7, 8, 9, 10)
+                                                for n in ('BACKGROUND', 'FOREGROUND'))
+
     for obj in objects:
-        kind = obj.get('type', obj.get('class',''))
-        if kind not in ['player', 'item']:
+        kind = obj.get('type') or obj.get('class', '')
+        if kind not in ('player', 'item', 'enemy'):
             continue
         x, y = obj['x']/tile, obj['y']/tile
         if x != int(x) or y != int(y) or not (0 <= x < w and 0 <= y < h):
@@ -123,19 +151,29 @@ def import_tiled(source, target):
             if spawn is not None:
                 raise ValueError('Keep exactly one player spawn')
             spawn = [x,y]
-        else:
+        elif kind == 'item':
             item_type = properties(obj).get('itemType')
             if item_type not in range(4):
-                raise ValueError('itemType must be 0=Fire Up, 1=Bomb Up, 2=Heart, 3=Star')
+                raise ValueError('itemType must be 0=Fire Up, 1=Bomb Up, 2=Heart, 3=Armored Jacket')
             if not any(cells[n][y*w+x] == 10 for n in ['BACKGROUND','FOREGROUND']):
                 raise ValueError('Every hidden item must be placed on a bush (tile 10)')
             if any(ix == x and iy == y for ix,iy,_ in items):
                 raise ValueError('Only one hidden item per bush')
             items.append((x,y,item_type))
+        else:
+            enemy_props = properties(obj)
+            enemy_type = enemy_props.get('enemyType')
+            left = enemy_props.get('facingLeft', False)
+            if type(enemy_type) is not int or enemy_type not in range(len(ENEMY_NAMES)):
+                raise ValueError('enemyType must be 0=Shooter, 1=Koopa, 2=Boo')
+            if type(left) is not bool:
+                raise ValueError('facingLeft must be a boolean')
+            if solid(x, y) or (enemy_type == 0 and solid(x, y - 1)):
+                raise ValueError(f'Enemy has insufficient space at column {x}, row {y}')
+            enemies.append((x, y, enemy_type, int(left)))
     if spawn is None:
         raise ValueError('Keep one player point in OBJECTS')
-    i = spawn[1]*w+spawn[0]
-    if cells['COLLISION'][i] or any(cells[n][i] in [7,8,9,10] for n in ['BACKGROUND','FOREGROUND']):
+    if solid(*spawn):
         raise ValueError('Spawn must be empty')
     props = properties(data)
     size = props.get('gameTileSize',32)
@@ -150,6 +188,9 @@ def import_tiled(source, target):
             lines.append(''.join(map(str,row)) if name == 'COLLISION' else ' '.join(map(str,row)))
     lines.append(f'ITEMS {len(items)}')
     lines.extend(f'{x} {y} {kind}' for x,y,kind in items)
+    if enemies or props.get('useMapEnemies') is True:
+        lines.append(f'ENEMIES {len(enemies)}')
+        lines.extend(f'{x} {y} {kind} {left}' for x, y, kind, left in enemies)
     Path(target).write_text('\n'.join(lines)+'\n', encoding='utf-8')
 
 

@@ -33,7 +33,7 @@ void Walker::init(Texture* spritesheet, ShaderProgram& program) {
 // El jugador no influye en su comportamiento.
 void Walker::update(int deltaTime, const movement::Body&, bool) {
     const float seconds = deltaTime / 1000.f;
-    if (walk(WALK_SPEED, seconds)) facingLeft = !facingLeft;
+    patrolGround(WALK_SPEED, seconds);
     applyGravity(seconds);
     updateSprite(deltaTime, facingLeft ? WALK_LEFT : WALK_RIGHT);
 }

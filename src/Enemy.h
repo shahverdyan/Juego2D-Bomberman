@@ -50,10 +50,8 @@ protected:
 
     // Gravedad y colisión vertical con la misma física que el jugador (sin salto).
     void applyGravity(float seconds);
-    // Avanza hacia donde mira. Devuelve true si una pared lo ha frenado.
-    bool walk(float speed, float seconds);
-    // ¿Hay suelo justo delante de los pies?
-    bool floorAhead() const;
+    // Patrulla sobre el suelo y gira ante una pared o el borde de la plataforma.
+    void patrolGround(float speed, float seconds);
     void updateSprite(int deltaTime, int anim);
 
     movement::Body body;

@@ -164,36 +164,40 @@ void Scene::init() {
     update(0);
 }
 
-// Crea los enemigos del nivel (provisional: posiciones fijas hasta que el nivel las defina).
-// Cada spawn: {columna, fila del suelo, mira a la izquierda}.
+// La fila de Shooter y Koopa indica la celda de sus pies. Boo usa la esquina superior.
 void Scene::spawnEnemies() {
-    struct Spawn { int tileX, floorRow; bool facingLeft; };
+    using Kind = LevelData::EnemyKind;
+    // Posiciones originales de Forest para mapas anteriores a la sección ENEMIES.
+    static const std::vector<LevelData::EnemySpawn> forestSpawns = {
+        {14, 24, Kind::Shooter, false}, {24, 9, Kind::Shooter, true},
+        {42, 24, Kind::Koopa, true}, {16, 16, Kind::Koopa, false},
+        {20, 15, Kind::Boo, true}, {38, 5, Kind::Boo, true}
+    };
+    const auto& spawns = level == 1 && !map->hasEnemySpawns() ? forestSpawns : map->getEnemySpawns();
     const float tileSize = float(map->getTileSize());
-
-    // Shooters: pasillo inferior y repisa superior.
-    const Spawn shooterSpawns[] = { { 14, 25, false }, { 24, 10, true } };
-    for (const Spawn& spawn : shooterSpawns) {
-        const glm::vec2 position(spawn.tileX * tileSize, spawn.floorRow * tileSize - Shooter::HEIGHT);
-        Shooter* shooter = new Shooter(position, spawn.facingLeft);
-        shooter->init(shooterTexture, shooterBulletTexture, texProgram);
-        enemies.push_back(shooter);
-    }
-
-    // Walkers: suelo derecho y plataforma central (de esta se cae por el borde).
-    const Spawn walkerSpawns[] = { { 42, 25, true }, { 16, 17, false } };
-    for (const Spawn& spawn : walkerSpawns) {
-        const glm::vec2 position(spawn.tileX * tileSize, spawn.floorRow * tileSize - Walker::HEIGHT);
-        Walker* walker = new Walker(position, spawn.facingLeft);
-        walker->init(walkerTexture, texProgram);
-        enemies.push_back(walker);
-    }
-
-    // Boos: flotan en zonas abiertas. Cada spawn: {columna, fila de la hitbox}.
-    const Spawn booSpawns[] = { { 20, 15, true }, { 38, 5, true } };
-    for (const Spawn& spawn : booSpawns) {
-        Boo* boo = new Boo(glm::vec2(spawn.tileX * tileSize, spawn.floorRow * tileSize), spawn.facingLeft);
-        boo->init(booTexture, texProgram);
-        enemies.push_back(boo);
+    for (const auto& spawn : spawns) {
+        const float x = spawn.x * tileSize;
+        const float feet = (spawn.y + 1) * tileSize;
+        switch (spawn.kind) {
+        case Kind::Shooter: {
+            auto* shooter = new Shooter(glm::vec2(x, feet - Shooter::HEIGHT), spawn.facingLeft);
+            shooter->init(shooterTexture, shooterBulletTexture, texProgram);
+            enemies.push_back(shooter);
+            break;
+        }
+        case Kind::Koopa: {
+            auto* koopa = new Walker(glm::vec2(x, feet - Walker::HEIGHT), spawn.facingLeft);
+            koopa->init(walkerTexture, texProgram);
+            enemies.push_back(koopa);
+            break;
+        }
+        case Kind::Boo: {
+            auto* boo = new Boo(glm::vec2(x, spawn.y * tileSize), spawn.facingLeft);
+            boo->init(booTexture, texProgram);
+            enemies.push_back(boo);
+            break;
+        }
+        }
     }
 
     for (Enemy* enemy : enemies) enemy->setTileMap(map);
@@ -274,21 +278,23 @@ void Scene::startLevel(int number) {
     loadLevel();
 }
 
-// Carga (o recarga) el nivel actual: mapa, enemigos, objetos, puerta y tiempo.
-// Los enemigos aún tienen posiciones fijas del nivel 1 (spawnEnemies).
+// Reconstruye el escenario a partir del archivo y conserva los atributos del jugador.
 void Scene::loadLevel() {
+    TileMap* nextMap = TileMap::createTileMap(levelFile(level), glm::vec2(0, 0), texProgram);
     for (Enemy* enemy : enemies) delete enemy;
     enemies.clear();
     delete map;
-    map = TileMap::createTileMap(levelFile(level), glm::vec2(0, 0), texProgram);
+    map = nextMap;
     result = RUNNING;
     timeUp = false;
+    timeLeftMs = LEVEL_TIME_SECONDS * 1000;
     player->setTileMap(map);
     spawnEnemies();
     spawnItems();
     setupDoor();
-    resetPlayer();
-    timeLeftMs = LEVEL_TIME_SECONDS * 1000;
+    bombs.clear();
+    player->setPosition(map->getSpawn());
+    updateCamera();
 }
 
 // Coloca la puerta cerrada sobre el marcador del mapa. El marcador es la casilla
@@ -315,7 +321,7 @@ void Scene::update(int deltaTime) {
         player->updateDeath(deltaTime);
         if (player->deathFinished()) {
             if (timeUp || player->getLives() <= 0) result = GAME_OVER;
-            else player->setPosition(map->getSpawn());
+            else loadLevel();
         }
         return;
     }
@@ -335,8 +341,6 @@ void Scene::update(int deltaTime) {
     pickUpItems();
 
     // Daño al jugador: bala, contacto con un enemigo o fuego de una explosión.
-    // Primero se recoge si hay daño y después se aplica, porque damagePlayer()
-    // puede reiniciar el nivel y borrar los enemigos.
     const movement::Body& playerBody = player->getBody();
     bool playerHurt = false;
     for (Enemy* enemy : enemies) {
@@ -382,6 +386,10 @@ void Scene::update(int deltaTime) {
         }
     }
 
+    updateCamera();
+}
+
+void Scene::updateCamera() {
     const glm::vec2 pos = player->getPosition();
     const glm::ivec2 size = map->getPixelSize();
     auto camera = view::follow(pos.x,pos.y,size.x,size.y,map->getTileSize());
@@ -472,7 +480,7 @@ void Scene::detonate(Bomb& bomb) {
     bomb.setBlastCells(blastCells);
 }
 
-// ¿Toca el cuerpo alguna celda de una explosión activa (dura 0.5 s)?
+// ¿Toca el cuerpo alguna celda de una explosión activa?
 bool Scene::touchesFire(const movement::Body& body) const {
     const float tileSize = float(map->getTileSize());
     for (const Bomb& bomb : bombs) {

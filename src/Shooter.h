@@ -35,7 +35,6 @@ public:
 
 private:
     bool canSee(const movement::Body& player) const;
-    void patrol(float seconds);
     void fire();
     void updateBullets(float seconds);
 

@@ -32,6 +32,14 @@ struct LevelData {
     struct HiddenItem { int x,y,type; };
     std::vector<HiddenItem> hiddenItems;
     bool hasItemSpawns = false;
+    enum class EnemyKind { Shooter, Koopa, Boo };
+    struct EnemySpawn {
+        int x, y;
+        EnemyKind kind;
+        bool facingLeft;
+    };
+    std::vector<EnemySpawn> enemySpawns;
+    bool hasEnemySpawns = false;
 
     bool inBounds(int x, int y) const { return x >= 0 && y >= 0 && x < width && y < height; }
     bool isFoliage(int x, int y) const {
@@ -148,19 +156,27 @@ struct LevelData {
         for (int y = spawnY; y < spawnY + span; ++y)
             for (int x = spawnX; x < spawnX + span; ++x)
                 if (solid(x, y)) return false;
-        input >> std::ws;
-        if (input.peek() != std::char_traits<char>::eof()) {
+        while (input >> tag) {
             int count;
-            if (!(input >> tag >> count) || tag != "ITEMS" || count < 0 || count > width*height) return false;
-            hasItemSpawns = true;
-            for (int i=0; i<count; ++i) {
-                HiddenItem item;
-                if (!(input >> item.x >> item.y >> item.type) || item.type < 0 || item.type > 3 || !isFoliage(item.x,item.y)) return false;
-                hiddenItems.push_back(item);
-            }
-            input >> std::ws;
-            if (input.peek() != std::char_traits<char>::eof()) return false;
+            if (!(input >> count) || count < 0 || count > width * height) return false;
+            if (tag == "ITEMS" && !hasItemSpawns) {
+                hasItemSpawns = true;
+                for (int i = 0; i < count; ++i) {
+                    HiddenItem item;
+                    if (!(input >> item.x >> item.y >> item.type) || item.type < 0 ||
+                        item.type > 3 || !isFoliage(item.x, item.y)) return false;
+                    hiddenItems.push_back(item);
+                }
+            } else if (tag == "ENEMIES" && !hasEnemySpawns) {
+                hasEnemySpawns = true;
+                for (int i = 0; i < count; ++i) {
+                    int x, y, kind, left;
+                    if (!(input >> x >> y >> kind >> left) || kind < 0 || kind > 2 ||
+                        (left != 0 && left != 1) || solid(x, y)) return false;
+                    enemySpawns.push_back({x, y, static_cast<EnemyKind>(kind), left == 1});
+                }
+            } else return false;
         }
-        return true;
+        return input.eof() && !input.bad();
     }
 };

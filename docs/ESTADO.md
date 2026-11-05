@@ -1,3 +1,39 @@
+# Terrazas superiores de Ocean (5 noviembre 2026)
+
+- Koopa en fila 8, columna 1. Retirado el arbusto de fila 8, columna 3.
+- Tirador en fila 4, columna 14. El arbusto con Fire Up pasa de fila 4, columna 13 a fila 5, columna 8 y ocupa el extremo de la terraza.
+- Verificados los puntos de aparición, la bomba debajo del arbusto y el acceso al portal tras romperlo. Conversión de Tiled y recursos de Debug y Release comprobados.
+
+# Koopas de Ocean (5 noviembre 2026)
+
+- Reubicado el Koopa en fila 4, columna 14. Añadido un Koopa en fila 16, columna 10. Ocean tiene tres Koopas y dos tiradores.
+- La patrulla al detectar bordes es compartida por ambos tipos en todos los niveles.
+- Verificados la conversión de Tiled, la colisión en los puntos de aparición y la copia a Debug y Release.
+
+# Reloj y patrullas al reaparecer (5 noviembre 2026)
+
+- Cada vida empieza con 4:00. Al perder una vida y reaparecer, se restaura el reloj junto con el escenario.
+- Koopas y tiradores comprueban el apoyo antes de avanzar y giran ante paredes y bordes. Un enemigo colocado en el aire baja en vertical hasta su primera plataforma.
+- Verificados Debug y Release. La prueba de integración recorre las patrullas de Forest y Ocean y comprueba el reloj de 4:00 tras perder una vida.
+
+# Ocean poblado y reaparición (5 noviembre 2026)
+
+- Ocean tiene seis objetos ocultos, dos Koopas y dos tiradores. Las posiciones se editan en OBJECTS y se guardan en ITEMS y ENEMIES.
+- El Koopa de fila 22, columna 14 queda protegido por la cascada hasta abrirla. El tirador de fila 28, columna 14 cabe bajo el extremo elevado del muelle. El arbusto de ese extremo pasa a fila 25, columna 13.
+- Bombas con 2 s de mecha y 0,4 s de fuego. Máximo de 4 bombas simultáneas y 4 casillas de alcance por dirección.
+- Al perder una vida y reaparecer se restauran enemigos, contador, arbustos, objetos, cascadas y portal. Se conservan las mejoras y el tiempo restante.
+- Verificados Tiled, rutas de Ocean, tiempos de bombas y físicas. Debug y Release superan las cinco pruebas nativas.
+- Prueba de integración con selección de Ocean, apertura del recinto, recogida y topes de mejoras, reaparición completa y fin de la tercera vida.
+
+# Ocean, nivel 2 (5 noviembre 2026)
+
+- Mapa vertical de 16×30 con el atlas World 1, diez arbustos, una cascada retráctil y portal en (10, 4).
+- level02.tmj editable y level02.txt convertido. Ocean aparece disponible desde Jugar.
+- Inicio provisional en (2, 28), con cero objetos y cero enemigos. Los enemigos fijos pertenecen a Forest.
+- Vista con coordenadas en level02-preview.png. Pendiente fijar inicio, objetos y enemigos.
+- Verificado con las físicas reales el acceso al portal, a la cabecera de la cascada y a los diez arbustos.
+- Debug y Release compilados. Arranque correcto y selección de Ocean comprobada desde el menú.
+
 # Limpieza (5 noviembre 2026)
 
 - `Screen` reduce con GL_LINEAR (MinFilter) y amplía con GL_NEAREST: los JPEG de 1061x1008 (menú, game over,

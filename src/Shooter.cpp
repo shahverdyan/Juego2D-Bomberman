@@ -62,7 +62,7 @@ void Shooter::update(int deltaTime, const movement::Body& player, bool) {
         // Sin ver al jugador el temporizador baja, pero nunca por debajo del
         // tiempo de reacción: al volver a verlo siempre tarda un poco en disparar.
         shootTimerMs = std::max(shootTimerMs - deltaTime, int(REACTION_MS));
-        patrol(seconds);
+        patrolGround(WALK_SPEED, seconds);
     }
 
     applyGravity(seconds);
@@ -102,12 +102,6 @@ bool Shooter::canSee(const movement::Body& player) const {
     for (int x = from; x <= to; ++x)
         if (map->isSolid(x, row)) return false;
     return true;
-}
-
-// Camina hacia donde mira y se da la vuelta al llegar a un borde o a una pared.
-void Shooter::patrol(float seconds) {
-    if (body.grounded && !floorAhead()) facingLeft = !facingLeft;
-    if (walk(WALK_SPEED, seconds)) facingLeft = !facingLeft;
 }
 
 // La bala sale desde la boca, justo delante del cuerpo.

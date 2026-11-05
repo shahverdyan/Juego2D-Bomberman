@@ -10,7 +10,7 @@ Se usan los tres sprites de la cuarta fila (4.º, 5.º y 6.º), en una celda com
 El cuerpo mantiene centro y base; las chispas conservan espacio transparente alrededor.
 Se conservan los píxeles originales, sin escalado artificial de un único dibujo.
 Pulso pequeño/medio/grande/medio, con aceleración al acercarse la detonación.
-La mecha sigue durando 3 s. Cada bomba calcula su fase por su propio tiempo.
+La mecha dura 2 s. Cada bomba calcula su fase por su propio tiempo.
 
 ## Explosión
 
@@ -18,7 +18,7 @@ Las tres filas siguientes contienen centros 16x16, extremos y tramos de unión.
 Se ensamblan en casillas 16x16 sin estirarlos: se repiten las medias piezas de unión
 para cubrir exactamente la longitud de cada bloque del alcance.
 El atlas resultante tiene siete columnas (centro, arriba, abajo, izquierda, derecha,
-vertical y horizontal) y tres filas de intensidad. Crece y decrece durante los 0.5 s
+vertical y horizontal) y tres filas de intensidad. Crece y decrece durante los 0.4 s
 que ya dura el daño. Bombas distintas conservan tiempos de animación independientes.
 
 ## Objetos

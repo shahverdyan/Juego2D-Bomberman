@@ -12,16 +12,18 @@ int main() {
     for(int i=0;i<300;++i) { pulse.update(8); assert(pulse.getBombFrame()>=0 && pulse.getBombFrame()<3); }
     Bomb blast(0,0,32,0);
     assert(blast.update(0) && blast.getExplosionFrame()==0);
-    blast.update(84); assert(blast.getExplosionFrame()==1);
-    blast.update(83); assert(blast.getExplosionFrame()==2);
-    blast.update(83); assert(blast.getExplosionFrame()==2);
-    blast.update(84); assert(blast.getExplosionFrame()==1);
-    blast.update(83); assert(blast.getExplosionFrame()==0);
-    blast.update(83); assert(blast.isExpired());
+    blast.update(67); assert(blast.getExplosionFrame()==1);
+    blast.update(67); assert(blast.getExplosionFrame()==2);
+    blast.update(66); assert(blast.getExplosionFrame()==2);
+    blast.update(67); assert(blast.getExplosionFrame()==1);
+    blast.update(67); assert(blast.getExplosionFrame()==0);
+    blast.update(65); assert(!blast.isExpired());
+    blast.update(1); assert(blast.isExpired());
     Bomb fresh(0,0,32);
     assert(fresh.getBombFrame()==2 && blast.getExplosionFrame()==0);
 	Bomb defaultBomb(0, 0, 32);
 	assert(defaultBomb.getRemainingMs() == Bomb::DEFAULT_FUSE_MS);
+	assert(!defaultBomb.update(1999) && defaultBomb.update(1));
 	assert(defaultBomb.getTileSize() == 32);
 	assert(defaultBomb.getFireRange() == Bomb::DEFAULT_FIRE_RANGE);
 	Bomb upgradedBomb(0, 0, 32, Bomb::DEFAULT_FUSE_MS, 3);

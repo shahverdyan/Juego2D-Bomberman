@@ -89,6 +89,8 @@ int main(int argc, char** argv)
     timePreviousFrame = glfwGetTime();
     double accumulator = 0.0;
     const double fixedStep = 0.008; // 125 Hz; exact integer milliseconds for the lab API.
+    const int firstBlastFrame = (Bomb::DEFAULT_FUSE_MS + 7) / 8 - 1;
+    const int blastFrames = (Bomb::DEFAULT_EXPLOSION_MS + 7) / 8;
     int frames = 0;
     while (!glfwWindowShouldClose(window)) {
         currentTime = glfwGetTime();
@@ -102,7 +104,12 @@ int main(int argc, char** argv)
             accumulator -= fixedStep;
         }
         Game::instance().render();
-        const bool originalCapture = originalEffects && (frames==0 || frames==27 || frames==55 || frames==187 || frames==369 || frames==374 || frames==385 || frames==396 || frames==417 || frames==427 || frames==437);
+        const int blastFrame = frames - firstBlastFrame;
+        const bool originalCapture = originalEffects &&
+            (frames == 0 || frames == 27 || frames == 55 || blastFrame == -6 ||
+             blastFrame == 0 || blastFrame == blastFrames / 5 || blastFrame == blastFrames * 2 / 5 ||
+             blastFrame == blastFrames * 3 / 5 || blastFrame == blastFrames * 4 / 5 ||
+             blastFrame == blastFrames);
         if (smoke && (originalCapture || (!originalEffects && (hudTest || (mapEffects ? (frames==0 || frames==62 || frames==125) : frames==4))))) {
             std::vector<unsigned char> pixels(SCREEN_WIDTH * SCREEN_HEIGHT * 3);
             glReadPixels(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, GL_RGB, GL_UNSIGNED_BYTE, pixels.data());
@@ -112,7 +119,7 @@ int main(int argc, char** argv)
                 capture.write(reinterpret_cast<char*>(pixels.data() + y * SCREEN_WIDTH * 3), SCREEN_WIDTH * 3);
         }
         glfwSwapBuffers(window);
-        if (smoke && ++frames >= (originalEffects ? 438 : hudTest ? 6 : mapEffects ? 126 : 5)) break;
+        if (smoke && ++frames >= (originalEffects ? firstBlastFrame + blastFrames + 1 : hudTest ? 6 : mapEffects ? 126 : 5)) break;
     }
     Game::instance().shutdown();
     if (smoke) std::cout << "SMOKE OK: resources, shaders, map and rendering loaded" << std::endl;

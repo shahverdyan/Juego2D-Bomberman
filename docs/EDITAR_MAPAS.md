@@ -11,7 +11,7 @@ Ya contiene el atlas y el nivel actual. No hay que recortar imágenes ni escribi
 3. COLLISION: activa el ojo para verla. Cualquier casilla pintada aquí bloquea; vacía permite pasar.
    Pinta solo terreno permanente. Arbustos y cascadas adquieren colisión automáticamente.
    Oculta esta capa para ver el aspecto final sin sus marcadores.
-4. OBJECTS: punto `spawn` del jugador y puntos de los objetos ocultos. Activa el ajuste a cuadrícula
+4. OBJECTS: punto `spawn` del jugador, objetos ocultos y enemigos. Activa el ajuste a cuadrícula
    y sitúa cada punto en la esquina superior izquierda de su casilla, no en el centro.
 
 El editor usa celdas de 16x16 píxeles del atlas. El juego las dibuja a 32 unidades,
@@ -35,10 +35,20 @@ La explosión que toca la cabecera retrae la cascada en 1000 ms. Solo quedan cab
 ## Objetos ocultos
 
 Cada punto de tipo `item` debe estar sobre un arbusto. Mueve el punto junto con su arbusto.
-Su propiedad entera `itemType` indica: 0 Fire Up, 1 Bomb Up, 2 corazón, 3 estrella.
+Su propiedad entera `itemType` admite 0 para Fire Up, 1 para Bomb Up, 2 para corazón y 3 para Armored Jacket.
 Puedes duplicar un punto y cambiar la propiedad para añadir objetos. Solo uno por arbusto.
-Al importar se guardan con el nivel; no hace falta cambiar `Scene::spawnItems`.
-Los enemigos todavía conservan los spawns fijos de tu compañero en Scene: no se editan con estos puntos.
+Al importar se guardan con el nivel.
+
+## Enemigos
+
+En Ocean puedes mover o duplicar los puntos de tipo `enemy` en OBJECTS. Usa `enemyType`
+con 0 para Shooter, 1 para Koopa y 2 para Boo. Activa `facingLeft` para que mire a la izquierda.
+La casilla de Shooter y Koopa corresponde a sus pies. El Shooter también necesita libre la
+casilla superior. El punto de Boo marca su esquina superior izquierda.
+
+Al convertir el mapa, cada enemigo se guarda como `columna fila tipo miraIzquierda` en
+`ENEMIES`. La propiedad de mapa `useMapEnemies` conserva esa sección al quitar todos
+los enemigos. Forest usa sus posiciones originales cuando el archivo carece de la sección.
 
 ## Aplicar al juego
 
@@ -49,6 +59,8 @@ compila en Visual Studio y ejecuta. Si prefieres hacerlo desde terminal, con Pyt
 ```
 python tools/tiled_map.py to-game src/levels/level01.tmj src/levels/level01.txt
 ```
+
+Para Ocean, sustituye ambos `level01` por `level02`.
 
 Si usas el lanzador de Python de Windows, sustituye `python` por `py -3`.
 El conversor solo utiliza la biblioteca estándar de Python, sin paquetes adicionales.

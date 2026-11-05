@@ -17,6 +17,12 @@ with TemporaryDirectory(dir=ROOT/"build") as folder:
     converter.import_tiled(editor, game)
     assert converter.read_level(game) == original
 
+    ocean = ROOT/'src/levels/level02.txt'
+    ocean_data = converter.read_level(ocean)
+    converter.export_tiled(ocean, folder/'ocean.tmj')
+    converter.import_tiled(folder/'ocean.tmj', folder/'ocean.txt')
+    assert converter.read_level(folder/'ocean.txt') == ocean_data
+
     data = json.loads(editor.read_text())
     layers = {layer['name']:layer for layer in data['layers']}
     # Move the first hidden power-up together with its bush, as in the editor.
