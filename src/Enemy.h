@@ -1,4 +1,5 @@
 #pragma once
+#include <vector>
 #include "Sprite.h"
 #include "TileMap.h"
 #include "Movement.h"
@@ -28,8 +29,9 @@ public:
     virtual void clearProjectiles() {}
 
     const movement::Body& getBody() const { return body; }
-    // Contacto cuerpo a cuerpo con otro cuerpo (el jugador).
-    bool touches(const movement::Body& other) const;
+    // Contacto cuerpo a cuerpo con otro cuerpo (el jugador). Virtual: el jefe no
+    // toca a nadie mientras está teletransportándose.
+    virtual bool touches(const movement::Body& other) const;
 
     // Muerte (fuego o tecla K): deja de hacer daño, reproduce su animación
     // durante DEATH_MS con updateDeath() y después la Scene lo borra.
@@ -38,6 +40,12 @@ public:
     void updateDeath(int deltaTime);
     bool isDying() const { return dying; }
     bool isDead() const { return dying && deathMs >= DEATH_MS; }
+
+    // Lo toca el fuego de una explosión. Por defecto muere; el jefe solo pierde vida.
+    virtual void hitByExplosion() { kill(); }
+    // Enemigos nuevos que ha creado este enemigo (el jefe invoca estatuas).
+    // Se añaden a out y dejan de ser suyos: a partir de ahí los gestiona la Scene.
+    virtual void takeSpawnedEnemies(std::vector<Enemy*>& out) {}
 
 protected:
     // Animación de muerte de cada tipo (índice de animación de su sprite).

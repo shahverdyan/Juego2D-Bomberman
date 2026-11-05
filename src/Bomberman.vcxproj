@@ -26,7 +26,10 @@
     <ClInclude Include="Shader.h" />
     <ClInclude Include="Shooter.h" />
     <ClInclude Include="Walker.h" />
+    <ClInclude Include="Audio.h" />
     <ClInclude Include="Boo.h" />
+    <ClInclude Include="Boss.h" />
+    <ClInclude Include="Statue.h" />
     <ClInclude Include="Door.h" />
     <ClInclude Include="Menu.h" />
     <ClInclude Include="LevelSelect.h" />
@@ -50,7 +53,11 @@
     <ClCompile Include="Shader.cpp" />
     <ClCompile Include="Shooter.cpp" />
     <ClCompile Include="Walker.cpp" />
+    <ClCompile Include="Audio.cpp" />
+    <ClCompile Include="AudioLibrary.cpp" />
     <ClCompile Include="Boo.cpp" />
+    <ClCompile Include="Boss.cpp" />
+    <ClCompile Include="Statue.cpp" />
     <ClCompile Include="Door.cpp" />
     <ClCompile Include="Menu.cpp" />
     <ClCompile Include="LevelSelect.cpp" />
@@ -109,7 +116,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>NOMINMAX;_CRT_SECURE_NO_WARNINGS;WIN32;_DEBUG;_CONSOLE;_LIB;GLEW_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(ProjectDir)..\libs\Simple OpenGL Image Library\src;$(ProjectDir)..\libs\glew-1.13.0\include;$(ProjectDir)..\libs\glm;$(ProjectDir)..\libs\glfw-3.3.8\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)..\libs\Simple OpenGL Image Library\src;$(ProjectDir)..\libs\glew-1.13.0\include;$(ProjectDir)..\libs\glm;$(ProjectDir)..\libs\miniaudio;$(ProjectDir)..\libs\glfw-3.3.8\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -129,7 +136,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>NOMINMAX;_CRT_SECURE_NO_WARNINGS;WIN32;NDEBUG;_CONSOLE;_LIB;GLEW_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(ProjectDir)..\libs\Simple OpenGL Image Library\src;$(ProjectDir)..\libs\glfw-3.3.8\include;$(ProjectDir)..\libs\glew-1.13.0\include;$(ProjectDir)..\libs\glm;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)..\libs\Simple OpenGL Image Library\src;$(ProjectDir)..\libs\glfw-3.3.8\include;$(ProjectDir)..\libs\glew-1.13.0\include;$(ProjectDir)..\libs\glm;$(ProjectDir)..\libs\miniaudio;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -145,7 +152,7 @@
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <Target Name="CopyGameResources" AfterTargets="Build">
     <ItemGroup>
-      <GameResource Include="images\**\*;levels\**\*;shaders\**\*" />
+      <GameResource Include="images\**\*;levels\**\*;shaders\**\*;sounds\**\*" />
     </ItemGroup>
     <Copy SourceFiles="@(GameResource)" DestinationFiles="@(GameResource->'$(OutDir)%(Identity)')" />
   </Target>

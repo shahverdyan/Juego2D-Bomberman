@@ -82,9 +82,14 @@ CREDITS = [
     "RICK: MISTER MIKE",
     "BOO: TEEKS",
     "KOOPA: NO BODY",
-    "SPRITES CUSTOM:",
-    "THE SPRITERS RESOURCE",
+    "SPRITES: THE SPRITERS RESOURCE",
+    "SPRITES CUSTOM: HECHOS CON GEMINI",
     "IMAGENES DE RICK GENERADAS CON IA",
+    "",
+    "MUSICA: LOUSWAN  MRPOLY  MATTHEW PABLO",
+    "KISTOL  JOBROMEDIA  JKFITE01",
+    "SONIDOS: VIRCON32  THEMIGHTYGLIDER",
+    "LUKE RUSTLTD  FUPI  LEOHPAZ",
     "",
     "VIDEOJOCS FIB UPC 2026 2027",
     "",
@@ -170,14 +175,15 @@ def menu_cursor():
     cut_original((42, 213, 50, 221), (120, 120, 248)).save(IMAGES / "menu-cursor.png")
 
 
-def info_screen(lines, filename):
-    """Escena del árbol con un recuadro grande: título amarillo y texto blanco centrados."""
+def info_screen(lines, filename, spacing=14):
+    """Escena del árbol con un recuadro grande: título amarillo y texto blanco centrados.
+    spacing: píxeles entre líneas (los créditos van más juntos para que quepan)."""
     screen = scale2(tree_scene())
     draw_box(screen, INFO_BOX, DARK_PURPLE)
     y = INFO_BOX[1] + 14
     for i, line in enumerate(lines):
         draw_centered(screen, line, y, YELLOW if i == 0 else WHITE)
-        y += 14
+        y += spacing
     screen.convert("RGB").save(IMAGES / filename)
 
 
@@ -204,7 +210,7 @@ def level_select():
 def main():
     menu_cursor()
     info_screen(INSTRUCTIONS, "menu-instructions.png")
-    info_screen(CREDITS, "menu-credits.png")
+    info_screen(CREDITS, "menu-credits.png", spacing=11)
     level_select()
     print("Generadas instrucciones, créditos, selección de nivel y sprites del menú")
 

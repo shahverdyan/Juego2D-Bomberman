@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <cmath>
 #include "Shooter.h"
+#include "Audio.h"
 
 // Atlas shooter-atlas.png (tools/build_shooter.py): 8 columnas x 3 filas de 32x48.
 // Fila 0 mira a la izquierda, fila 1 a la derecha.
@@ -111,6 +112,7 @@ void Shooter::fire() {
     bullet.y = body.y + MUZZLE_Y;
     bullet.vx = facingLeft ? -BULLET_SPEED : BULLET_SPEED;
     bullets.push_back(bullet);
+    Audio::instance().play(Audio::SHOOTER_SHOT);
 }
 
 // Las balas avanzan en línea recta y desaparecen al tocar un tile sólido.

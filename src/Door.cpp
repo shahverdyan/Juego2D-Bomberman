@@ -1,4 +1,5 @@
 #include "Door.h"
+#include "Audio.h"
 
 // portal-atlas.png (tools/build_portal.py): 7 fotogramas de 28x32 en una fila.
 // 0 cerrada, 1-4 abriéndose, 5-6 portal abierto girando.
@@ -33,6 +34,7 @@ void Door::init(Texture* spritesheet, ShaderProgram& program, const glm::vec2& b
 
 void Door::open() {
     if (state != CLOSED) return;
+    Audio::instance().play(Audio::DOOR_OPEN);
     state = OPENING;
     openingMs = 0;
     sprite->changeAnimation(ANIM_OPENING);

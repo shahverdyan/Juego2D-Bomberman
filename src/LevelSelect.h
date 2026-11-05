@@ -4,7 +4,8 @@
 // Selección de nivel con la pantalla original de selección de mundo: una torre
 // con cinco botones (Forest, Ocean, Wind, Cloud y Evil = niveles 1 a 5).
 // ↑/↓ (o W/S) suben y bajan por la torre y Espacio/Enter empiezan el nivel.
-// Los niveles que aún no existen se ven oscurecidos y no se pueden elegir.
+// Los niveles bloqueados (sin superar el anterior, o que aún no existen) se ven
+// oscurecidos y no se pueden elegir.
 class LevelSelect {
 public:
     static const int LEVEL_COUNT = 5;
