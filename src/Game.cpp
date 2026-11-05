@@ -128,6 +128,9 @@ bool Game::update(int deltaTime)
 		}
 		break;
 	case GAME_OVER:
+        if (consumeKey(GLFW_KEY_ESCAPE) | consumeKey(GLFW_KEY_SPACE) | consumeKey(GLFW_KEY_ENTER))
+            fadeTo(MENU);
+        break;
 	case VICTORY:
 		if (consumeKey(GLFW_KEY_ESCAPE) | consumeKey(GLFW_KEY_SPACE) | consumeKey(GLFW_KEY_ENTER))
 			fadeTo(LEVEL_SELECT);
