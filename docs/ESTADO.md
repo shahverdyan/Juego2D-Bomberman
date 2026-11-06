@@ -1,3 +1,9 @@
+# Avisos de variables sin inicializar (6 noviembre 2026)
+
+- `Game::bPlay` se inicializa a `true` en su declaración (Game.h) y `Scene::currentTime` a 0 en el
+  constructor de Scene. Release compila y pasa las cinco pruebas ocultas; el enlace de Debug falló porque
+  `build/Debug/Bomberman.exe` estaba abierto (LNK1168): pendiente recompilar Debug con el juego cerrado.
+
 # Enemigos y objetos de Forest (6 noviembre 2026)
 
 - Koopas añadidos en (20, 43) y (19, 24). Tirador en (7, 45) en la casilla del antiguo arbusto.

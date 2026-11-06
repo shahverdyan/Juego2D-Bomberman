@@ -32,6 +32,7 @@ Scene::Scene() {
     level = 1;
     timeLeftMs = LEVEL_TIME_SECONDS * 1000;
     invulnerableMode = false;
+    currentTime = 0.0f;
 }
 
 Scene::~Scene() {}
