@@ -9,7 +9,7 @@ from PIL import Image
 ROOT = Path(__file__).resolve().parents[1]
 TILES = ROOT / 'src/images/tilesets'
 SOURCE = TILES / 'Game Boy _ GBC - Pocket Bomberman - Stages (World 1) - Stage 1-4.png'
-LAYOUT = ROOT / 'src/levels/level03.txt'
+LAYOUT = ROOT / 'src/levels/level05.txt'
 # Source grid origin (15,12), tile size 16. Numbers are one-based atlas IDs.
 CATALOG = [
     ('background', 2, 1), ('grass_left', 14, 2), ('grass_middle', 15, 2),
