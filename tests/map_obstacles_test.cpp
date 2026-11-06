@@ -8,8 +8,10 @@
 
 int main() {
     LevelData level;
-    std::ifstream input("src/levels/level01.txt");
+    std::ifstream input("src/levels/level03.txt");
     assert(level.load(input));
+    assert(level.hasItemSpawns && !level.hiddenItems.empty());
+    const auto itemCount = level.hiddenItems.size();
     assert(level.waterfalls.size()==3);
     assert(level.isFoliage(3,24) && level.solid(3,24));
     auto solid=[&](int x,int y) { return level.solid(x,y); };
@@ -46,10 +48,10 @@ int main() {
     for(int y=top+2;y<=bottom;++y)
         assert(level.solid(x,y)==bool(level.collision[y*level.width+x] || level.isFoliage(x,y)));
     assert(!level.updateWaterfalls(100));
-    std::ifstream reset("src/levels/level01.txt");
+    std::ifstream reset("src/levels/level03.txt");
     assert(level.load(reset) && level.waterfalls[1].openingMs==-1);
     assert(level.solid(x,bottom));
-    assert(level.hasItemSpawns && level.hiddenItems.size()==4);
+    assert(level.hasItemSpawns && level.hiddenItems.size()==itemCount);
     for(const auto& item : level.hiddenItems) assert(level.isFoliage(item.x,item.y));
 
     const auto camera=view::follow(64,768,1536,832,32);

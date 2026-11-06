@@ -61,7 +61,7 @@ compila en Visual Studio y ejecuta. Si prefieres hacerlo desde terminal, con Pyt
 python tools/tiled_map.py to-game src/levels/level01.tmj src/levels/level01.txt
 ```
 
-Para Ocean, sustituye ambos `level01` por `level02`.
+Para Forest II o Forest III, sustituye ambos `level01` por `level02` o `level03`.
 
 Si usas el lanzador de Python de Windows, sustituye `python` por `py -3`.
 El conversor solo utiliza la biblioteca estándar de Python, sin paquetes adicionales.

@@ -12,17 +12,13 @@ spec.loader.exec_module(converter)
 with TemporaryDirectory(dir=ROOT/"build") as folder:
     folder = Path(folder)
     editor, game = folder/'level.tmj', folder/'level.txt'
-    original = converter.read_level(ROOT/'src/levels/level01.txt')
-    converter.export_tiled(ROOT/'src/levels/level01.txt', editor)
-    converter.import_tiled(editor, game)
-    assert converter.read_level(game) == original
+    for number in (1, 2, 3):
+        source = ROOT/f'src/levels/level{number:02d}.txt'
+        converter.export_tiled(source, editor)
+        converter.import_tiled(editor, game)
+        assert converter.read_level(game) == converter.read_level(source)
 
-    ocean = ROOT/'src/levels/level02.txt'
-    ocean_data = converter.read_level(ocean)
-    converter.export_tiled(ocean, folder/'ocean.tmj')
-    converter.import_tiled(folder/'ocean.tmj', folder/'ocean.txt')
-    assert converter.read_level(folder/'ocean.txt') == ocean_data
-
+    # Las coordenadas de esta prueba pertenecen a Forest III.
     data = json.loads(editor.read_text())
     layers = {layer['name']:layer for layer in data['layers']}
     # Move the first hidden power-up together with its bush, as in the editor.

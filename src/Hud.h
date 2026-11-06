@@ -10,6 +10,8 @@ struct HudInfo {
     int enemiesLeft;
     int fireRange;
     int bombCapacity;
+    bool godMode;
+    int starSeconds;
 };
 
 // Original-style 160x8 strip, displayed at integer scale along the bottom.
@@ -21,12 +23,15 @@ public:
     Hud(const Hud&) = delete;
     Hud& operator=(const Hud&) = delete;
     void init(ShaderProgram& program);
-    void render(const HudInfo& info);
+    void render(const HudInfo& info, ShaderProgram& program);
 private:
     void draw(int atlasCell, int nativeX);
     void drawText(const std::string& text, int nativeX);
     void drawNumber(int value, int nativeX);
+    void drawStatus(const std::string& text, float x);
     Texture texture;
+    Texture statusFont;
     Sprite* panel = nullptr;
     Sprite* glyph = nullptr;
+    Sprite* statusGlyph = nullptr;
 };

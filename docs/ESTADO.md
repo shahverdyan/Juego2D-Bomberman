@@ -1,3 +1,22 @@
+# Avisos en negrita (6 noviembre 2026)
+
+- GOD MODE e INVENCIBILIDAD usan la variante en negrita de la fuente pixelada, con trazos de tres píxeles.
+- Verificados Debug y Release y las capturas de los avisos en partida.
+
+# Orden de Forest y avisos de invulnerabilidad (6 noviembre 2026)
+
+- Forest I contiene el diseño en U de 34×18. Forest III contiene las ruinas de 48×26. Los archivos de Tiled y del juego se intercambiaron completos.
+- Las teclas 1, 2 y 3 abren sus mapas. La tecla 5 abre el jefe del nivel 6 mientras falte Forest V. Se apartó del build de Debug el nivel 5 generado por una versión anterior.
+- GOD MODE aparece en negro arriba a la izquierda. Se apaga al cambiar de nivel o salir a un menú.
+- Armored Jacket muestra INVENCIBILIDAD arriba a la derecha, de 10 a 1, y el aviso desaparece al agotar la protección.
+- Pruebas de rutas y Tiled correctas. Debug y Release pasan las cinco pruebas nativas. La prueba integrada comprueba atajos, reinicio de GOD MODE y capturas del contador.
+
+# Forest I a V y Forest III jugable (6 noviembre 2026)
+
+- El selector muestra Forest I a Forest V. Las placas de 40 píxeles contienen los rótulos completos en el fondo y en los sprites normales y seleccionados.
+- Forest III implementa el borrador ampliado de 34×18 en level03.tmj y level03.txt. Rick empieza en fila 16, columna 3. Hay siete Koopas, corazón dorado, Bomb Up, Fire Up y portal central.
+- Verificada la conversión de Tiled y el arranque en Debug y Release. Capturas del juego comprueban la tecla 3, la casilla de inicio y los cinco rótulos en el selector.
+
 # Enemigos y objetos de Forest (6 noviembre 2026)
 
 - Koopas añadidos en (20, 43) y (19, 24). Tirador en (7, 45) en la casilla del antiguo arbusto.
