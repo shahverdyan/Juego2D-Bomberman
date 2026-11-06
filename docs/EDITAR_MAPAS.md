@@ -87,25 +87,13 @@ El juego dibuja cada celda de 16x16 a 32x32 unidades y la ventana la amplía a 6
 píxeles. Un píxel del atlas ocupa 4x4 píxeles de pantalla. La colisión sigue ocupando
 la casilla completa y no depende de la transparencia o del dibujo.
 
-Para restaurar los recortes originales corregidos sin cambiar el diseño de ningún mapa:
-
-```
-python tools/build_world1.py --atlas-only
-```
-
-Esta opción sobrescribe el PNG y su catálogo, así que reemplaza las ediciones manuales
-de píxeles. También actualiza la vista general del nivel. El origen correcto de los
-recortes de 16x16 en la imagen fuente es (15,12); no se recorta ninguna fila ni se añade
-transparencia al pie de la cascada.
-
 Para actualizar el editor desde un `.txt` cambiado fuera de Tiled:
 
 ```
 python tools/tiled_map.py to-tiled src/levels/level01.txt src/levels/level01.tmj
 ```
 
-Estas órdenes sobrescriben el destino indicado. `build_world1.py` regenera el diseño base,
-por lo que NO debes ejecutarlo después de diseñar tu mapa si quieres conservar tus cambios.
+Esta orden sobrescribe el `.tmj` indicado.
 
 El formato admite una sección ITEMS opcional tras COLLISION; es la que utiliza el conversor
 para guardar los puntos. Los mapas antiguos sin esa sección conservan los cuatro objetos originales.

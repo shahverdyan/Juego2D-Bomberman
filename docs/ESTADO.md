@@ -1,3 +1,14 @@
+# Limpieza de tools (6 noviembre 2026)
+
+- Borrados los generadores que nadie ejecuta (sus PNG ya están en src/images): build_player, build_koopa, build_boo,
+  build_boss, build_portal, build_shooter, build_menu, build_hud_font, build_items, build_original_hud, build_world1
+  y el obsoleto build_boss_arena (escribía la sala vieja de 10x9). También tools/__pycache__.
+- Quedan tiled_map.py (conversor Tiled, usado por ActualizarMapa.cmd y tests/tiled_map_test.py) y
+  build_original_effects.py (usado por tests/original_effects_test.py).
+- Quitadas sus menciones en comentarios del código (se conserva la descripción de cada atlas) y en EDITAR_MAPAS,
+  MAPAS, HUD, EFECTOS_ORIGINALES y AGENTS. Las secciones antiguas de este archivo se dejan como historial.
+- Verificado: Debug y Release compilan sin avisos; cinco pruebas ocultas con código 0; las dos pruebas Python PASS.
+
 # Sin bomba al reaparecer (6 noviembre 2026)
 
 - El Espacio pulsado durante la animación de muerte quedaba guardado en Game::pressed y Player::update lo usaba en

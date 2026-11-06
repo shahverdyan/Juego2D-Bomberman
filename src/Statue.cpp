@@ -1,7 +1,7 @@
 #include "Statue.h"
 #include "Audio.h"
 
-// gargoyle-atlas.png (tools/build_boss.py): 3 fotogramas de 16x16 en una fila,
+// gargoyle-atlas.png: 3 fotogramas de 16x16 en una fila,
 // dibujados a escala 2 (32x32). Fotograma 0: estatua quieta; 1: rota (muerte).
 enum StatueAnims { STILL, BROKEN };
 static const float SPRITE_SIZE = 32.f;

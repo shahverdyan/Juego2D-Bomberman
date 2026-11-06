@@ -79,16 +79,6 @@ Dibuja BACKGROUND antes de FOREGROUND. Las explosiones pueden eliminar el tile 1
 los bloques sólidos aún no son destructibles. No hay importación de Tiled.
 
 Para modificar el diseño a mano, edita las capas en `src/levels/level01.txt` y compila.
-Para regenerar el diseño base y el atlas con Python + Pillow:
-
-```
-python tools/build_world1.py --layout-only
-```
-
-Con `--layout-only`, la orden SOBRESCRIBE `level01.txt` y la vista general, reutilizando
-el atlas existente. Sin esa opción, también regenera el atlas y el catálogo. No la
-uses después de editar el mapa a mano salvo que quieras regenerarlo. La imagen fuente
-no se modifica. Las coordenadas de extracción y las columnas/plataformas están en el script.
 
 ## Comprobaciones
 

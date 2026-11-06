@@ -1,7 +1,7 @@
 #include "Door.h"
 #include "Audio.h"
 
-// portal-atlas.png (tools/build_portal.py): 7 fotogramas de 28x32 en una fila.
+// portal-atlas.png: 7 fotogramas de 28x32 en una fila.
 // 0 cerrada, 1-4 abriéndose, 5-6 portal abierto girando.
 enum DoorAnims { ANIM_CLOSED, ANIM_OPENING, ANIM_OPEN };
 static const int FRAME_COUNT = 7;

@@ -39,7 +39,6 @@ entre sí al regenerar los recursos.
 El pie se recorta completo a 16x16 desde (127,124), con su última fila original opaca.
 El origen de la cuadrícula del escenario es (15,12); el desfase anterior de una fila
 se corrige en todos los bloques. El atlas mantiene los mismos IDs y dimensiones.
-El terreno se genera con build_world1.py --atlas-only, sin regenerar los mapas .txt/.tmj.
 build_original_effects.py solo genera bombas, fuego y objetos; no sobrescribe el terreno.
 
 ## Verificación

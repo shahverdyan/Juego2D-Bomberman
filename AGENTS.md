@@ -8,7 +8,7 @@ Implement in phases and verify each phase. Explain changes briefly in Spanish.
 Keep code understandable for a student to explain in a lab assessment.
 Update docs/ESTADO.md with checks performed and outstanding work.
 Original Pocket Bomberman tiles are integrated in src/images/tilesets/world1-atlas.png.
-See docs/MAPAS.md. tools/build_world1.py overwrites the level when regenerating.
+See docs/MAPAS.md.
 Do not describe the temporary Bubble graphics as original Bomberman graphics.
 Compile Debug and Release after changes to build configuration or shared code.
 The old template backup is outside this repository, in the chat visualization directory.

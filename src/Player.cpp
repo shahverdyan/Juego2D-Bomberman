@@ -13,7 +13,7 @@
 #define FALL_STEP 4
 
 
-// Atlas rick-atlas.png (tools/build_player.py): 7 columnas x 2 filas de 24x24.
+// Atlas rick-atlas.png: 7 columnas x 2 filas de 24x24.
 // Fila 0 mira a la derecha, fila 1 a la izquierda.
 // Columnas: 0 quieto, 1-3 caminar, 4 subiendo, 5 cayendo, 6 muerte (de frente).
 enum PlayerAnims

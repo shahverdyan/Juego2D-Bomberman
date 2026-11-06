@@ -5,7 +5,7 @@
 #include "Game.h"
 
 // level-select.png mide 160x152 y se dibuja a escala 4, como la partida.
-// level-buttons.png (tools/build_menu.py): botones de 56x32, fila 0 normal y
+// level-buttons.png: botones de 56x32, fila 0 normal y
 // fila 1 elegido; la columna es el nivel - 1.
 static const float SCALE = 4.f;
 static const int BUTTON_W = 56, BUTTON_H = 32;

@@ -123,19 +123,19 @@ void Scene::init() {
         throw std::runtime_error("Cannot load images/shooter-bullet.png");
     shooterBulletTexture->setMinFilter(GL_NEAREST);
     shooterBulletTexture->setMagFilter(GL_NEAREST);
-    // Walker: Koopa Troopa, atlas generado por tools/build_koopa.py.
+    // Walker: Koopa Troopa (koopa-atlas.png).
     walkerTexture = new Texture();
     if (!walkerTexture->loadFromFile("images/koopa-atlas.png", TEXTURE_PIXEL_FORMAT_RGBA))
         throw std::runtime_error("Cannot load images/koopa-atlas.png");
     walkerTexture->setMinFilter(GL_NEAREST);
     walkerTexture->setMagFilter(GL_NEAREST);
-    // Boo: atlas generado por tools/build_boo.py.
+    // Boo (boo-atlas.png).
     booTexture = new Texture();
     if (!booTexture->loadFromFile("images/boo-atlas.png", TEXTURE_PIXEL_FORMAT_RGBA))
         throw std::runtime_error("Cannot load images/boo-atlas.png");
     booTexture->setMinFilter(GL_NEAREST);
     booTexture->setMagFilter(GL_NEAREST);
-    // Jefe final, sus bolas de fuego y sus estatuas (sprite de gárgola): tools/build_boss.py.
+    // Jefe final, sus bolas de fuego y sus estatuas (sprite de gárgola).
     bossTexture = loadSpriteTexture("images/boss-atlas.png");
     bossFireballTexture = loadSpriteTexture("images/boss-fireball.png");
     statueTexture = loadSpriteTexture("images/gargoyle-atlas.png");
@@ -157,7 +157,7 @@ void Scene::init() {
     }
     spawnItems();
 
-    // Puerta-portal: atlas generado por tools/build_portal.py.
+    // Puerta-portal (portal-atlas.png).
     doorTexture = new Texture();
     if (!doorTexture->loadFromFile("images/portal-atlas.png", TEXTURE_PIXEL_FORMAT_RGBA))
         throw std::runtime_error("Cannot load images/portal-atlas.png");

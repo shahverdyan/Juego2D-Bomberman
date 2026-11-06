@@ -1,6 +1,6 @@
 #include "Walker.h"
 
-// koopa-atlas.png (tools/build_koopa.py): 8 columnas x 3 filas de 32x32.
+// koopa-atlas.png: 8 columnas x 3 filas de 32x32.
 // Fila 0 mira a la izquierda y fila 1 a la derecha; las columnas son los pasos.
 // Fila 2, muerte: agachado, dentro del caparazón y caparazón boca abajo.
 enum WalkerAnims { WALK_LEFT, WALK_RIGHT, DEATH };
