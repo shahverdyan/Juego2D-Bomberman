@@ -1,3 +1,27 @@
+# Sin bomba al reaparecer (6 noviembre 2026)
+
+- El Espacio pulsado durante la animación de muerte quedaba guardado en Game::pressed y Player::update lo usaba en
+  el primer frame tras reaparecer, poniendo una bomba en el inicio. Player::updateDeath ahora lo descarta.
+- Verificado: Debug y Release compilan sin avisos; cinco pruebas ocultas con código 0. Pendiente probarlo jugando.
+
+# Sin jingle al entrar en la sala del jefe (6 noviembre 2026)
+
+- Game::update: al superar un nivel cuyo siguiente es el último (Scene::LEVEL_COUNT, el jefe) no suena
+  LEVEL_CLEAR_JINGLE; el fundido entra directo y updateMusic pone BOSS_MUSIC. El resto de niveles mantiene el jingle.
+- Verificado: Debug y Release compilan sin avisos; cinco pruebas ocultas con código 0. Pendiente escucharlo jugando.
+
+# Sala del jefe ampliada (6 noviembre 2026)
+
+- level06 pasa a 15x13 con seis pares de plataformas. Era inválido porque ITEMS apuntaba a (2,6) y (12,6), y el
+  cargador exige que cada objeto esté sobre un arbusto; los arbustos están en (1,6) y (13,6). Objetos movidos ahí.
+- Verificado: el cargador real (LevelData) acepta level01, level02 y level06; la versión anterior da inválido.
+  Debug y Release compilados y copiados a build; cinco pruebas ocultas con código 0 en ambos.
+- level06.tmj regenerado desde el .txt (to-tiled); ida y vuelta por Tiled identica y tests/tiled_map_test.py PASS.
+  Ojo: tools/build_boss_arena.py aun escribe la sala vieja de 10x9 si se ejecuta.
+- Rediseno en Tiled (arbustos en FOREGROUND): los puntos Fire Up y Bomb Up estaban una casilla a la derecha de sus
+  arbustos; movidos a (1,5) y (7,5) y .txt regenerado. LevelData lo acepta; Debug y Release compilan y pasan las pruebas.
+- Recordatorio: editar un .txt de nivel no basta; hay que compilar (o Recompilar en Visual Studio) para copiarlo a build.
+
 # Avisos de variables sin inicializar (6 noviembre 2026)
 
 - `Game::bPlay` se inicializa a `true` en su declaración (Game.h) y `Scene::currentTime` a 0 en el

@@ -175,7 +175,10 @@ bool Game::update(int deltaTime)
 			const int next = nextLevel(scene.getLevel());
 			if (next != 0) {
 				unlockLevel(next);
-				fadeTo(PLAYING, next, false, Audio::LEVEL_CLEAR_JINGLE);
+				// Al pasar a la sala del jefe (el último nivel) no suena el jingle:
+				// se entra directamente con la música del jefe.
+				const bool toBoss = (next == Scene::LEVEL_COUNT);
+				fadeTo(PLAYING, next, false, toBoss ? Audio::NO_MUSIC : Audio::LEVEL_CLEAR_JINGLE);
 			}
 			else fadeTo(VICTORY, 0, false, Audio::VICTORY_JINGLE);
 		}

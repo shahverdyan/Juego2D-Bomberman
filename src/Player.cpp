@@ -120,6 +120,9 @@ void Player::startDying()
 // Sin colisiones: quieto DEATH_PAUSE_MS, luego salta y cae atravesando el suelo.
 void Player::updateDeath(int deltaTime)
 {
+	// Se descarta el Espacio pulsado mientras se muere: si no, se guardaría
+	// y la bomba aparecería en el punto de inicio nada más reaparecer.
+	Game::instance().consumeKey(GLFW_KEY_SPACE);
 	const bool jumpNow = deathMs < DEATH_PAUSE_MS && deathMs + deltaTime >= DEATH_PAUSE_MS;
 	deathMs += deltaTime;
 	if (jumpNow) body.vy = -420.f;
