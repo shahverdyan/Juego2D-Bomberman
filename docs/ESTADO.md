@@ -1,3 +1,11 @@
+# Pantalla de victoria (6 noviembre 2026)
+
+- Nueva images/victory.png de 640x608 (tamaño de ventana, se dibuja 1:1): fondo de la antigua victory.jpeg reducido,
+  sin su título borroso ni el texto ENHORABUENA (se conservan confeti y fuegos), y una franja oscura superpuesta arriba con WORLD CLEAR!! en fuente pixel propia.
+  Se borra victory.jpeg (queda en git). Generada con un script temporal de Pillow, no incluido en tools.
+- Verificado: Debug y Release compilan sin avisos y copian la imagen; cinco pruebas ocultas con código 0
+  (Game::init carga todas las pantallas).
+
 # Limpieza de tools (6 noviembre 2026)
 
 - Borrados los generadores que nadie ejecuta (sus PNG ya están en src/images): build_player, build_koopa, build_boo,

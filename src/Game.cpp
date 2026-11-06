@@ -23,7 +23,8 @@ void Game::init()
 	gameOver = new Screen();
 	gameOver->init("images/game-over.jpeg", scene.getShaderProgram());
 	victory = new Screen();
-	victory->init("images/victory.jpeg", scene.getShaderProgram());
+	// 640x608, el tamaño de la ventana: se dibuja 1:1 y el título se ve nítido.
+	victory->init("images/victory.png", scene.getShaderProgram());
 
 	// Cuadro negro para los fundidos: una textura de 1x1 basta, porque el color
 	// final lo pone el uniform "color" (negro con la transparencia del fundido).
