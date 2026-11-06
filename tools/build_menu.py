@@ -19,7 +19,7 @@ Pantalla a escala 4 (160x152, mismo tamaño de píxel que la partida):
 Sprites:
   menu-cursor.png        bomba roja de 8x8 (Menu.cpp la mueve sobre las opciones).
   level-buttons.png      botones de mundo de 56x32: fila 0 normal, fila 1 elegido,
-                         columnas en orden de nivel (Forest, Ocean, Wind, Cloud, Evil).
+                         columnas en orden de nivel (Forest I a Forest V).
 
 Las posiciones de los botones deben coincidir con LevelSelect.cpp.
 
@@ -98,32 +98,52 @@ CREDITS = [
 
 # --- Selección de nivel (escala 4) ---
 WORLD_SCREEN = (230, 18, 390, 162)  # pantalla original de 160x144
-# Botones sueltos de la hoja original, en orden de nivel 1..5.
-WORLDS = ["FOREST", "OCEAN", "WIND", "CLOUD", "EVIL"]
+# Los botones originales aportan los marcos y el color de cada nivel.
+BUTTON_SOURCES = ("FOREST", "OCEAN", "WIND", "CLOUD", "EVIL")
+LEVEL_LABELS = ("Forest I", "Forest II", "Forest III", "Forest IV", "Forest V")
+BUTTON_POSITIONS = ((104, 96), (0, 80), (104, 56), (0, 32), (104, 16))
 NORMAL_BUTTONS = {"OCEAN": (402, 18), "CLOUD": (402, 58), "EVIL": (402, 98),
                   "WIND": (402, 138), "FOREST": (402, 178)}
 SELECTED_BUTTONS = {"EVIL": (470, 18), "WIND": (470, 57), "FOREST": (470, 96),
                     "CLOUD": (470, 135), "OCEAN": (470, 174)}
 BUTTON_W, BUTTON_H = 56, 32
+BUTTON_INK = (
+    ((176, 0, 0), (248, 104, 0)),
+    ((0, 0, 144), (0, 80, 208)),
+    ((0, 0, 144), (0, 80, 208)),
+    ((0, 88, 0), (0, 176, 0)),
+    ((176, 0, 0), (248, 104, 0)),
+)
+# Letra compacta de 9 píxeles de alto para el rótulo de 40 píxeles.
+LEVEL_GLYPHS = {
+    "F": ("####", "####", "#...", "#...", "###.", "#...", "#...", "#...", "#..."),
+    "o": ("....", "....", "....", ".##.", "#..#", "#..#", "#..#", "#..#", ".##."),
+    "r": ("...", "...", "...", "#.#", "##.", "#..", "#..", "#..", "#.."),
+    "e": ("....", "....", "....", ".##.", "#..#", "####", "#...", "#...", ".###"),
+    "s": ("...", "...", "...", ".##", "#..", ".#.", "..#", "..#", "##."),
+    "t": (".#.", ".#.", ".#.", "###", ".#.", ".#.", ".#.", ".#.", "..#"),
+    "I": ("#",) * 9,
+    "V": ("#...#", "#...#", "#...#", "#...#", ".#.#.", ".#.#.", ".#.#.", "..#..", "..#.."),
+    " ": (".",) * 9,
+}
 
 
-def font_text_width(text):
-    return len(text) * 6
+def font_text_width(text, glyphs=FONT):
+    return sum(len(glyphs[char][0]) + 1 for char in text)
 
 
-def draw_text(image, text, x, y, color):
+def draw_text(image, text, x, y, color, glyphs=FONT, shadow=BLACK):
     for char in text:
-        glyph = FONT[char]
+        glyph = glyphs[char]
         for row, line in enumerate(glyph):
             for column, pixel in enumerate(line):
                 if pixel == "#":
-                    # Sombra negra abajo a la derecha para que se lea mejor.
-                    image.putpixel((x + column + 1, y + row + 1), BLACK + (255,))
+                    image.putpixel((x + column + 1, y + row + 1), shadow + (255,))
         for row, line in enumerate(glyph):
             for column, pixel in enumerate(line):
                 if pixel == "#":
                     image.putpixel((x + column, y + row), color + (255,))
-        x += 6
+        x += len(glyph[0]) + 1
 
 
 def draw_centered(image, text, y, color):
@@ -187,23 +207,37 @@ def info_screen(lines, filename, spacing=14):
     screen.convert("RGB").save(IMAGES / filename)
 
 
+def label_button(button, label, colors, selected=False):
+    # La placa blanca sube un píxel en el sprite seleccionado.
+    top = 7 if selected else 8
+    button.paste(WHITE + (255,), (8, top, 48, top + 16))
+    width = font_text_width(label, LEVEL_GLYPHS)
+    if width > 40:
+        raise ValueError(f"El rótulo {label!r} no cabe en el botón")
+    draw_text(button, label, 8 + (40 - width) // 2, top + 3, colors[0],
+              glyphs=LEVEL_GLYPHS, shadow=colors[1])
+
+
 def level_select():
     screen = Image.new("RGBA", (160, 152), BLACK + (255,))
-    screen.paste(Image.open(ORIGINAL_SHEET).convert("RGBA").crop(WORLD_SCREEN), (0, 0))
-    hint_band(screen, "ESPACIO:JUGAR  ESC:MENU")
-    screen.convert("RGB").save(IMAGES / "level-select.png")
-
-    buttons = Image.new("RGBA", (BUTTON_W * len(WORLDS), BUTTON_H * 2), (0, 0, 0, 0))
     sheet = Image.open(ORIGINAL_SHEET).convert("RGBA")
-    for i, world in enumerate(WORLDS):
+    screen.paste(sheet.crop(WORLD_SCREEN), (0, 0))
+    buttons = Image.new("RGBA", (BUTTON_W * len(LEVEL_LABELS), BUTTON_H * 2), (0, 0, 0, 0))
+    for i, (world, label) in enumerate(zip(BUTTON_SOURCES, LEVEL_LABELS)):
         x, y = NORMAL_BUTTONS[world]
-        buttons.paste(sheet.crop((x, y, x + BUTTON_W, y + BUTTON_H)), (i * BUTTON_W, 0))
+        normal = sheet.crop((x, y, x + BUTTON_W, y + BUTTON_H))
+        label_button(normal, label, BUTTON_INK[i])
+        buttons.paste(normal, (i * BUTTON_W, 0))
+        screen.paste(normal, BUTTON_POSITIONS[i])
         # El botón elegido mide 56x31: se repite su última fila para llegar a 32.
         x, y = SELECTED_BUTTONS[world]
         selected = sheet.crop((x, y, x + BUTTON_W, y + BUTTON_H - 1))
+        label_button(selected, label, BUTTON_INK[i], selected=True)
         buttons.paste(selected, (i * BUTTON_W, BUTTON_H))
         buttons.paste(selected.crop((0, BUTTON_H - 2, BUTTON_W, BUTTON_H - 1)),
                       (i * BUTTON_W, 2 * BUTTON_H - 1))
+    hint_band(screen, "ESPACIO:JUGAR  ESC:MENU")
+    screen.convert("RGB").save(IMAGES / "level-select.png")
     buttons.save(IMAGES / "level-buttons.png")
 
 

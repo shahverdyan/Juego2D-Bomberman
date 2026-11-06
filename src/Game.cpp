@@ -45,6 +45,7 @@ void Game::init()
 // por ejemplo el Espacio que elige "Jugar" no ponga también una bomba.
 void Game::changeState(GameState newState)
 {
+	if (newState != PLAYING) scene.disableGodMode();
 	state = newState;
 	Audio::instance().stopJingle();  // el jingle de la pantalla anterior no sigue sonando
 	for (bool& key : pressed) key = false;
@@ -126,14 +127,15 @@ bool Game::update(int deltaTime)
 		return bPlay;
 	}
 
-	// Teclas 1-5 (atajo de prueba): cargan ese nivel desde cualquier pantalla, aunque
-	// esté bloqueado. La sala del jefe (nivel 6) solo se alcanza superando el 5.
+	// El último atajo abre la sala del jefe mientras falta Forest V.
 	for (int number = 1; number <= LevelSelect::LEVEL_COUNT; ++number) {
-		if (consumeKey(GLFW_KEY_0 + number) && Scene::levelExists(number)) {
-			unlockLevel(number);
-			fadeTo(PLAYING, number, state != PLAYING);  // desde un menú, partida nueva
-			return bPlay;
-		}
+		if (!consumeKey(GLFW_KEY_0 + number)) continue;
+		const int target = number == LevelSelect::LEVEL_COUNT && !Scene::levelExists(number)
+			? Scene::LEVEL_COUNT : number;
+		if (!Scene::levelExists(target)) continue;
+		if (target <= LevelSelect::LEVEL_COUNT) unlockLevel(target);
+		fadeTo(PLAYING, target, state != PLAYING);
+		return bPlay;
 	}
 
 	switch (state) {

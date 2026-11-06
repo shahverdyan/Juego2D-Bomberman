@@ -9,6 +9,7 @@ from PIL import Image
 ROOT = Path(__file__).resolve().parents[1]
 TILES = ROOT / 'src/images/tilesets'
 SOURCE = TILES / 'Game Boy _ GBC - Pocket Bomberman - Stages (World 1) - Stage 1-4.png'
+LAYOUT = ROOT / 'src/levels/level03.txt'
 # Source grid origin (15,12), tile size 16. Numbers are one-based atlas IDs.
 CATALOG = [
     ('background', 2, 1), ('grass_left', 14, 2), ('grass_middle', 15, 2),
@@ -45,7 +46,7 @@ def render_preview(atlas, background, foreground):
                     i = tile_id - 1
                     tile = atlas.crop(((i % 4)*16, (i // 4)*16, (i % 4+1)*16, (i // 4+1)*16))
                     preview.alpha_composite(tile, (x*16, y*16))
-    preview.save(ROOT / 'docs/level01-preview.png')
+    preview.save(ROOT / f'docs/{LAYOUT.stem}-preview.png')
 
 
 def main():
@@ -59,14 +60,14 @@ def main():
     atlas = Image.open(TILES / 'world1-atlas.png').convert('RGBA')
     if args.atlas_only:
         from tiled_map import read_level
-        level = read_level(ROOT / 'src/levels/level01.txt')
+        level = read_level(LAYOUT)
         width = level['width']
         layers = [
             [level['layers'][name][y*width:(y+1)*width] for y in range(level['height'])]
             for name in ['BACKGROUND', 'FOREGROUND']
         ]
         render_preview(atlas, *layers)
-        print('Extracted sixteen complete 16x16 tiles; level01.txt and level01.tmj unchanged.')
+        print('Extracted sixteen complete 16x16 tiles; map files unchanged.')
         return
 
     width, height = 48, 26
@@ -155,16 +156,15 @@ def main():
         lines.extend(' '.join(map(str, row)) for row in layer)
     lines.append('COLLISION')
     lines.extend(''.join(map(str, row)) for row in solid)
-    (ROOT / 'src/levels/level01.txt').write_text('\n'.join(lines) + '\n', encoding='utf-8')
+    LAYOUT.write_text('\n'.join(lines) + '\n', encoding='utf-8')
 
     # Whole-level preview at source resolution, separate from the live camera.
     render_preview(atlas, bg, fg)
     from tiled_map import export_tiled, import_tiled
-    editor = ROOT / 'src/levels/level01.tmj'
-    level_file = ROOT / 'src/levels/level01.txt'
-    export_tiled(level_file, editor)
-    import_tiled(editor, level_file)
-    print('Generated level01: 48x26, three connected ruins, lower recovery passage and roof exit.')
+    editor = LAYOUT.with_suffix('.tmj')
+    export_tiled(LAYOUT, editor)
+    import_tiled(editor, LAYOUT)
+    print(f'Generated {LAYOUT.stem}: 48x26, three connected ruins, lower recovery passage and roof exit.')
 
 
 if __name__ == '__main__':

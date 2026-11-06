@@ -11,11 +11,11 @@ static const float SCALE = 4.f;
 static const int BUTTON_W = 56, BUTTON_H = 32;
 // Esquina de cada botón en la pantalla, de abajo arriba de la torre.
 static const int BUTTON_POS[LevelSelect::LEVEL_COUNT][2] = {
-    { 104, 96 },  // 1 Forest
-    { 0, 80 },    // 2 Ocean
-    { 104, 56 },  // 3 Wind
-    { 0, 32 },    // 4 Cloud
-    { 104, 16 },  // 5 Evil
+    { 104, 96 },  // Forest I
+    { 0, 80 },    // Forest II
+    { 104, 56 },  // Forest III
+    { 0, 32 },    // Forest IV
+    { 104, 16 },  // Forest V
 };
 enum ButtonAnims { NORMAL = 0, SELECTED = LevelSelect::LEVEL_COUNT };
 

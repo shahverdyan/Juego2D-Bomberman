@@ -8,6 +8,10 @@
 #include "Audio.h"
 #include "Game.h"
 
+namespace {
+    constexpr int EFFECTS_TEST_LEVEL = 3; // Mapa de 48x26 con las cascadas originales.
+}
+
 Scene::Scene() {
     map = NULL;
     player = NULL;
@@ -308,6 +312,7 @@ void Scene::loadLevel() {
     map = nextMap;
     result = RUNNING;
     timeUp = false;
+    disableGodMode();
     timeLeftMs = LEVEL_TIME_SECONDS * 1000;
     victoryDelayMs = -1;
     player->setTileMap(map);
@@ -606,7 +611,7 @@ void Scene::render() {
     player->render();
 
     glViewport(0,0,SCREEN_WIDTH,SCREEN_HEIGHT);
-    // HUD en su propia franja, fuera de las nueve filas de juego.
+    // Los avisos y la franja inferior usan coordenadas de pantalla.
     texProgram.setUniformMatrix4f("projection",
         glm::ortho(0.f, float(SCREEN_WIDTH), float(SCREEN_HEIGHT), 0.f));
     HudInfo info;
@@ -616,7 +621,9 @@ void Scene::render() {
     info.enemiesLeft = aliveEnemies();
     info.fireRange = player->getFireRange();
     info.bombCapacity = int(player->getBombCapacity());
-    hud->render(info);
+    info.godMode = invulnerableMode;
+    info.starSeconds = (player->getStarMs() + 999) / 1000;
+    hud->render(info, texProgram);
 }
 
 void Scene::initShaders() {
@@ -644,6 +651,7 @@ void Scene::initShaders() {
 }
 // Deterministic hidden rendering test, requested through --map-effects-test only.
 void Scene::startMapEffectsTest() {
+    startLevel(EFFECTS_TEST_LEVEL);
     mapEffectsTest = true;
     invulnerableMode = true;
     player->setPosition(glm::vec2(28.f*32,12.f*32));
@@ -687,6 +695,7 @@ void Scene::runHudTestStep(int step) {
 
 // Hidden integration check: uses the real Player update and Scene placement logic.
 void Scene::runBombCollisionTest() {
+    startLevel(EFFECTS_TEST_LEVEL);
     auto require=[](bool ok,const char* message) { if(!ok) throw std::runtime_error(message); };
     auto& game=Game::instance();
     auto move=[&](int direction,int frames,bool jump=false) {
@@ -742,6 +751,7 @@ void Scene::runBombCollisionTest() {
 
 // Hidden render test: three fuse sizes, growing/shrinking fire, original item icons.
 void Scene::startOriginalEffectsTest() {
+    startLevel(EFFECTS_TEST_LEVEL);
     originalEffectsTest=true;
     invulnerableMode=true;
     bombs.clear();

@@ -1,6 +1,6 @@
-# Mapa actual: cámara y obstáculos (3 noviembre 2026)
+# Forest III: cámara y obstáculos
 
-Para editar gráficamente, usa `src/levels/level01.tmj` con Tiled y lee EDITAR_MAPAS.md.
+Para editar Forest III gráficamente, abre `src/levels/level03.tmj` con Tiled y lee EDITAR_MAPAS.md.
 La cámara enseña exactamente 10x9 bloques del mundo; el HUD ocupa su propia franja inferior.
 Ventana 640x608: área de juego 640x576 (bloques de 64 px) + HUD inferior de 32 px.
 
@@ -25,7 +25,7 @@ El .tmj lleva capas BACKGROUND, FOREGROUND, COLLISION y OBJECTS.
 
 # Referencia del diseño anterior
 
-El mapa activo es `src/levels/level01.txt`. Conserva 48 x 26 celdas, pero el diseño
+El mapa de Forest III es `src/levels/level03.txt`. Conserva 48 x 26 celdas, pero el diseño
 es asimétrico, con formas huecas inspiradas en las estructuras del original:
 
 - Zona oeste: entrada fácil, arco de troncos, saltos interiores alternados y una repisa lateral.
@@ -34,7 +34,7 @@ es asimétrico, con formas huecas inspiradas en las estructuras del original:
 - Desvío superior: desde el techo central se asciende a una copa alta y se vuelve hacia el este.
 - Paso inferior continuo: permite recuperar la ruta después de caer. No hay pozos mortales.
 
-La imagen general está en `docs/level01-preview.png`. La puerta usa el marcador (43,7).
+La imagen general está en `docs/level03-preview.png`. La puerta usa el marcador (43,7).
 La distribución se puede recorrer con las físicas actuales, sin depender de bombas aún no implementadas.
 
 ## Gráficos originales
@@ -78,14 +78,14 @@ El cargador valida dimensiones, filas, IDs y que el punto de aparición esté li
 Dibuja BACKGROUND antes de FOREGROUND. Las explosiones pueden eliminar el tile 10 de follaje;
 los bloques sólidos aún no son destructibles. No hay importación de Tiled.
 
-Para modificar el diseño a mano, edita las capas en `src/levels/level01.txt` y compila.
+Para modificar el diseño a mano, edita las capas en `src/levels/level03.txt` y compila.
 Para regenerar el diseño base y el atlas con Python + Pillow:
 
 ```
 python tools/build_world1.py --layout-only
 ```
 
-Con `--layout-only`, la orden SOBRESCRIBE `level01.txt` y la vista general, reutilizando
+Con `--layout-only`, la orden SOBRESCRIBE el mapa de Forest III y su vista general, reutilizando
 el atlas existente. Sin esa opción, también regenera el atlas y el catálogo. No la
 uses después de editar el mapa a mano salvo que quieras regenerarlo. La imagen fuente
 no se modifica. Las coordenadas de extracción y las columnas/plataformas están en el script.

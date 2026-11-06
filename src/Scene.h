@@ -45,6 +45,7 @@ public:
     void shutdown();
     void resetPlayer();
     void toggleInvulnerability() { invulnerableMode = !invulnerableMode; }
+    void disableGodMode() { invulnerableMode = false; }
     void killAllEnemies();  // tecla K: la puerta se abre al no quedar enemigos
     // El menú y las pantallas usan el mismo shader que la partida.
     ShaderProgram& getShaderProgram() { return texProgram; }
