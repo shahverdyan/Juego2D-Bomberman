@@ -1,3 +1,9 @@
+# Enemigos y objetos de Forest (6 noviembre 2026)
+
+- Koopas añadidos en (20, 43) y (19, 24). Tirador en (7, 45) en la casilla del antiguo arbusto.
+- Objetos nuevos en arbustos. Bomb Up en (10, 38), corazón dorado en (3, 30) y Fire Up en (9, 29). Coordenadas en orden fila, columna.
+- Forest suma nueve enemigos y siete objetos ocultos. Verificados conversión de Tiled, recorridos del nivel y arranque en Debug y Release.
+
 # Niveles desde archivo, teclas 1-5 y jefe en el nivel 6 (6 noviembre 2026)
 
 - Teclas 1-5: cargan ese nivel desde cualquier pantalla (aunque esté bloqueado, y lo desbloquean). Desde un menú
