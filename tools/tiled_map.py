@@ -6,7 +6,7 @@ from pathlib import Path
 
 DEFAULT_ITEMS = [(3, 24, 0), (4, 22, 1), (11, 20, 2), (15, 16, 3)]
 ITEM_NAMES = ['Fire Up', 'Bomb Up', 'Heart', 'Armored Jacket']
-ENEMY_NAMES = ['Shooter', 'Koopa', 'Boo']
+ENEMY_NAMES = ['Shooter', 'Koopa', 'Boo', 'Boss']
 
 
 def read_level(path):
@@ -165,7 +165,7 @@ def import_tiled(source, target):
             enemy_type = enemy_props.get('enemyType')
             left = enemy_props.get('facingLeft', False)
             if type(enemy_type) is not int or enemy_type not in range(len(ENEMY_NAMES)):
-                raise ValueError('enemyType must be 0=Shooter, 1=Koopa, 2=Boo')
+                raise ValueError('enemyType must be 0=Shooter, 1=Koopa, 2=Boo, 3=Boss')
             if type(left) is not bool:
                 raise ValueError('facingLeft must be a boolean')
             if solid(x, y) or (enemy_type == 0 and solid(x, y - 1)):

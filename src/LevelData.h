@@ -32,7 +32,7 @@ struct LevelData {
     struct HiddenItem { int x,y,type; };
     std::vector<HiddenItem> hiddenItems;
     bool hasItemSpawns = false;
-    enum class EnemyKind { Shooter, Koopa, Boo };
+    enum class EnemyKind { Shooter, Koopa, Boo, Boss };  // valores 0..3 del archivo
     struct EnemySpawn {
         int x, y;
         EnemyKind kind;
@@ -171,7 +171,7 @@ struct LevelData {
                 hasEnemySpawns = true;
                 for (int i = 0; i < count; ++i) {
                     int x, y, kind, left;
-                    if (!(input >> x >> y >> kind >> left) || kind < 0 || kind > 2 ||
+                    if (!(input >> x >> y >> kind >> left) || kind < 0 || kind > 3 ||
                         (left != 0 && left != 1) || solid(x, y)) return false;
                     enemySpawns.push_back({x, y, static_cast<EnemyKind>(kind), left == 1});
                 }

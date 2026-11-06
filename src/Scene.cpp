@@ -177,24 +177,14 @@ void Scene::init() {
     update(0);
 }
 
-// La fila de Shooter y Koopa indica la celda de sus pies. Boo usa la esquina superior.
+// Crea los enemigos de la sección ENEMIES del nivel.
+// La fila de Shooter y Koopa indica la celda de sus pies. Boo y el jefe usan la esquina superior.
 void Scene::spawnEnemies() {
     boss = NULL;
-    if (level == BOSS_LEVEL) {
-        spawnBoss();
-        return;
-    }
-
+    bossLevel = false;
     using Kind = LevelData::EnemyKind;
-    // Posiciones originales de Forest para mapas anteriores a la sección ENEMIES.
-    static const std::vector<LevelData::EnemySpawn> forestSpawns = {
-        {14, 24, Kind::Shooter, false}, {24, 9, Kind::Shooter, true},
-        {42, 24, Kind::Koopa, true}, {16, 16, Kind::Koopa, false},
-        {20, 15, Kind::Boo, true}, {38, 5, Kind::Boo, true}
-    };
-    const auto& spawns = level == 1 && !map->hasEnemySpawns() ? forestSpawns : map->getEnemySpawns();
     const float tileSize = float(map->getTileSize());
-    for (const auto& spawn : spawns) {
+    for (const auto& spawn : map->getEnemySpawns()) {
         const float x = spawn.x * tileSize;
         const float feet = (spawn.y + 1) * tileSize;
         switch (spawn.kind) {
@@ -216,40 +206,36 @@ void Scene::spawnEnemies() {
             enemies.push_back(boo);
             break;
         }
+        case Kind::Boss:
+            spawnBoss(spawn.x, spawn.y);
+            break;
         }
     }
 
     for (Enemy* enemy : enemies) enemy->setTileMap(map);
 }
 
-// Último nivel: solo el jefe. Flota por toda la sala, entre las paredes, el techo
-// y el suelo (la sala tiene un tile de borde sólido por cada lado).
-void Scene::spawnBoss() {
+// Jefe final. Flota por toda la sala, entre las paredes, el techo y el suelo
+// (la sala tiene un tile de borde sólido por cada lado). Empieza en la casilla del archivo.
+void Scene::spawnBoss(int tileX, int tileY) {
     const float tileSize = float(map->getTileSize());
     const glm::ivec2 size = map->getPixelSize();
     const float minX = tileSize, maxX = size.x - tileSize - Boss::WIDTH;
     const float minY = tileSize, maxY = size.y - tileSize - Boss::HEIGHT;
-    boss = new Boss(glm::vec2((minX + maxX) / 2.f, minY), minX, maxX, minY, maxY);
+    const glm::vec2 start(glm::clamp(tileX * tileSize, minX, maxX), glm::clamp(tileY * tileSize, minY, maxY));
+    boss = new Boss(start, minX, maxX, minY, maxY);
+    bossLevel = true;
     boss->init(bossTexture, bossFireballTexture, statueTexture, texProgram);
     boss->setTileMap(map);
     enemies.push_back(boss);
 }
 
-// Objetos escondidos en arbustos del nivel 1 (provisional: posiciones fijas).
-// Cada uno: {columna, fila, tipo, revelado}. La celda debe ser un arbusto.
+// Objetos escondidos en arbustos, de la sección ITEMS del nivel.
+// Cada uno: {columna, fila, tipo, revelado}. La celda es un arbusto.
 void Scene::spawnItems() {
-    if (map->hasItemSpawns()) {
-        items.clear();
-        for (const auto& spawn : map->getItemSpawns())
-            items.push_back({spawn.x,spawn.y,static_cast<ItemType>(spawn.type),false});
-        return;
-    }
-    items = {
-        { 3, 24, ITEM_FIRE_UP, false },  // junto al inicio
-        { 4, 22, ITEM_BOMB_UP, false },
-        { 11, 20, ITEM_HEART, false },
-        { 15, 16, ITEM_STAR, false },
-    };
+    items.clear();
+    for (const auto& spawn : map->getItemSpawns())
+        items.push_back({spawn.x,spawn.y,static_cast<ItemType>(spawn.type),false});
 }
 
 // Al tocar un objeto visible, el jugador lo recoge y se aplica su efecto.
@@ -424,7 +410,7 @@ void Scene::update(int deltaTime) {
     if (levelHasDoor) {
         if (aliveEnemies() == 0) door.open();
         door.update(deltaTime);
-        if (level != BOSS_LEVEL && door.isOpen() && door.contains(player->getBody())) result = LEVEL_COMPLETED;
+        if (!bossLevel && door.isOpen() && door.contains(player->getBody())) result = LEVEL_COMPLETED;
     }
     if (victoryDelayMs >= 0) {
         victoryDelayMs -= deltaTime;

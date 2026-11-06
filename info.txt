@@ -1,0 +1,81 @@
+AUTORES
+-------
+- Cristian Alexander Conrado Ozonian
+- Aleks Shahverdyan
+
+FUNCIONALIDADES IMPLEMENTADAS
+-----------------------------
+Pantallas
+- Menú principal (Jugar, Instrucciones, Créditos), pantalla de instrucciones,
+  créditos, selección de nivel, game over y victoria.
+- Transiciones con fundido a negro entre todas las pantallas y niveles.
+- Selección de nivel con la torre de mundos original: cada nivel se desbloquea
+  al superar el anterior.
+
+Jugador y bombas
+- Movimiento lateral y salto con física propia (gravedad, colisiones con el
+  mapa, paredes y techos). La cámara sigue al jugador con una vista de 10x9
+  casillas, como la pantalla de la Game Boy.
+- Bombas alineadas a las casillas, suspendidas en el aire (sin gravedad) y
+  sólidas: el jugador puede subirse encima de ellas para alcanzar sitios altos.
+- Mecha de 2 segundos con pulso que acelera antes de explotar. La explosión
+  en cruz se detiene en el terreno sólido y daña al jugador y a los enemigos.
+- 3 vidas. Al perder una vida el nivel se reinicia (enemigos, arbustos,
+  objetos y reloj) y se conservan las mejoras. Sin vidas, o al acabarse el
+  tiempo, game over y vuelta al menú principal.
+
+Escenario
+- Niveles con tiles originales de Pocket Bomberman.
+- Arbustos destructibles por el fuego, que pueden esconder objetos.
+- Cascadas que el fuego interrumpe temporalmente.
+
+Objetos (los cuatro del original)
+- Fire Up: aumenta en 1 el alcance de la explosión (máximo 4).
+- Bomb Up: aumenta en 1 las bombas simultáneas (máximo 4).
+- Corazón dorado: absorbe el siguiente golpe sin perder vida.
+- Estrella: invulnerabilidad durante 10 segundos.
+
+Enemigos (tres comportamientos distintos)
+- Shooter: patrulla su plataforma y, si ve al jugador delante en su fila, se
+  para y le dispara.
+- Koopa: camina y se da la vuelta al llegar a un borde o a una pared.
+- Boo: fantasma que atraviesa el terreno; se acerca cuando el jugador le da
+  la espalda y se para y se tapa la cara cuando el jugador lo mira.
+- Todos hacen daño por contacto y tienen animación de muerte.
+
+Jefe final (último nivel)
+- Demonio del mundo Evil de Pocket Bomberman. Flota por la sala y se
+  teletransporta para sorprender al jugador. Ataca por turnos con dos bolas
+  grandes que rebotan, cuatro bolas en diagonal y una estatua que cae del
+  techo sobre el jugador.
+- Necesita 5 impactos; tras cada uno queda un momento invulnerable.
+
+HUD
+- Tiempo restante, vidas (y corazón dorado), enemigos que quedan, bombas
+  simultáneas y alcance de la explosión.
+
+Sonido
+- Música para el menú, los niveles y el jefe, y jingles de nivel superado,
+  game over y victoria.
+- Efectos de sonido: bombas, explosiones, salto, objetos, daño, enemigos,
+  portal, jefe y menús.
+
+INSTRUCCIONES
+-------------
+Objetivo: en cada nivel hay que eliminar a todos los enemigos con las bombas.
+Entonces se abre el portal; hay que entrar en él antes de que se acabe el
+tiempo (4:00). En la sala del jefe, la victoria llega al derrotarlo.
+
+Controles:
+  Flechas izquierda/derecha o A/D   Moverse
+  Flecha arriba o W                 Saltar
+  Espacio                           Poner bomba
+  Esc                               Volver al menú / selección de nivel
+  Flechas arriba/abajo + Espacio    Moverse y elegir en los menús
+
+Teclas de prueba:
+  G      Activa o desactiva la invulnerabilidad (también para el reloj)
+  K      Elimina a todos los enemigos (y abre el portal)
+  1-5    Carga directamente el nivel 1 a 5 (si existe)
+  R      Devuelve al jugador al inicio del nivel
+
