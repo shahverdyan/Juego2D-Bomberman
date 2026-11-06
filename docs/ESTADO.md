@@ -1,3 +1,11 @@
+# Forest III de cascadas y Forest V de ruinas (6 noviembre 2026)
+
+- Forest III usa el boceto de 34 × 19. Rick empieza en (16, 6). Se colocaron seis enemigos y seis objetos en las casillas acordadas (fila, columna).
+- Se añadieron peldaños en (13, 20) y (11, 22), un apoyo en (10, 1) y dos casillas junto a la cabecera oeste para colocar una bomba. Una abertura en (8, 1) permite salir del rincón del corazón. Se amplió el hueco junto a los dos arbustos incrustados para poder recoger lo que sueltan.
+- Forest V recibe completos los dos archivos del anterior Forest III. Su portal conduce a la sala del jefe (level06). La tecla 5 y el botón Forest V cargan las ruinas.
+- Verificados Debug y Release, las cinco pruebas nativas, la conversión de Tiled, los saltos y el acceso a los seis objetos del nuevo mapa. La prueba integrada comprueba las teclas 1, 2, 3 y 5, el selector, las casillas, la apertura de la cascada oeste y la entrada al jefe por el portal.
+- Retirado el arbusto de la fila 3, columna 6, junto al portal de Forest III. Verificados Tiled y los recursos de Debug y Release.
+
 # Merge de cristian en main (6 noviembre 2026)
 
 - Conflicto con el nivel 3 de Aleks: build_menu.py, build_hud_font.py y build_world1.py se conservan (los usa

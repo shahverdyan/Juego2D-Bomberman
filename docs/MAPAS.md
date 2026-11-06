@@ -1,6 +1,12 @@
-# Forest III: cámara y obstáculos
+# Forest III
 
-Para editar Forest III gráficamente, abre `src/levels/level03.tmj` con Tiled y lee EDITAR_MAPAS.md.
+El mapa de cascadas ocupa 34 × 19 casillas. Abre `src/levels/level03.tmj` en Tiled.
+Rick empieza en fila 16, columna 6. La puerta está en fila 3, columna 5.
+La vista general está en `docs/level03-preview.png`.
+
+# Forest V: cámara y obstáculos
+
+Para editar Forest V gráficamente, abre `src/levels/level05.tmj` con Tiled y lee EDITAR_MAPAS.md.
 La cámara enseña exactamente 10x9 bloques del mundo; el HUD ocupa su propia franja inferior.
 Ventana 640x608: área de juego 640x576 (bloques de 64 px) + HUD inferior de 32 px.
 
@@ -25,7 +31,7 @@ El .tmj lleva capas BACKGROUND, FOREGROUND, COLLISION y OBJECTS.
 
 # Referencia del diseño anterior
 
-El mapa de Forest III es `src/levels/level03.txt`. Conserva 48 x 26 celdas, pero el diseño
+El mapa de Forest V es `src/levels/level05.txt`. Conserva 48 x 26 celdas, pero el diseño
 es asimétrico, con formas huecas inspiradas en las estructuras del original:
 
 - Zona oeste: entrada fácil, arco de troncos, saltos interiores alternados y una repisa lateral.
@@ -34,7 +40,7 @@ es asimétrico, con formas huecas inspiradas en las estructuras del original:
 - Desvío superior: desde el techo central se asciende a una copa alta y se vuelve hacia el este.
 - Paso inferior continuo: permite recuperar la ruta después de caer. No hay pozos mortales.
 
-La imagen general está en `docs/level03-preview.png`. La puerta usa el marcador (43,7).
+La imagen general está en `docs/level05-preview.png`. La puerta usa el marcador (43,7) y lleva a la sala del jefe (level06).
 La distribución se puede recorrer con las físicas actuales, sin depender de bombas aún no implementadas.
 
 ## Gráficos originales
@@ -78,14 +84,14 @@ El cargador valida dimensiones, filas, IDs y que el punto de aparición esté li
 Dibuja BACKGROUND antes de FOREGROUND. Las explosiones pueden eliminar el tile 10 de follaje;
 los bloques sólidos aún no son destructibles. No hay importación de Tiled.
 
-Para modificar el diseño a mano, edita las capas en `src/levels/level03.txt` y compila.
+Para modificar el diseño a mano, edita las capas en `src/levels/level05.txt` y compila.
 Para regenerar el diseño base y el atlas con Python + Pillow:
 
 ```
 python tools/build_world1.py --layout-only
 ```
 
-Con `--layout-only`, la orden SOBRESCRIBE el mapa de Forest III y su vista general, reutilizando
+Con `--layout-only`, la orden SOBRESCRIBE el mapa de Forest V y su vista general, reutilizando
 el atlas existente. Sin esa opción, también regenera el atlas y el catálogo. No la
 uses después de editar el mapa a mano salvo que quieras regenerarlo. La imagen fuente
 no se modifica. Las coordenadas de extracción y las columnas/plataformas están en el script.

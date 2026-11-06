@@ -9,7 +9,7 @@
 #include "Game.h"
 
 namespace {
-    constexpr int EFFECTS_TEST_LEVEL = 3; // Mapa de 48x26 con las cascadas originales.
+    constexpr int EFFECTS_TEST_LEVEL = 5; // Mapa de 48x26 con las cascadas originales.
 }
 
 Scene::Scene() {

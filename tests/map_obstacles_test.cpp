@@ -8,7 +8,7 @@
 
 int main() {
     LevelData level;
-    std::ifstream input("src/levels/level03.txt");
+    std::ifstream input("src/levels/level05.txt");
     assert(level.load(input));
     assert(level.hasItemSpawns && !level.hiddenItems.empty());
     const auto itemCount = level.hiddenItems.size();
@@ -48,7 +48,7 @@ int main() {
     for(int y=top+2;y<=bottom;++y)
         assert(level.solid(x,y)==bool(level.collision[y*level.width+x] || level.isFoliage(x,y)));
     assert(!level.updateWaterfalls(100));
-    std::ifstream reset("src/levels/level03.txt");
+    std::ifstream reset("src/levels/level05.txt");
     assert(level.load(reset) && level.waterfalls[1].openingMs==-1);
     assert(level.solid(x,bottom));
     assert(level.hasItemSpawns && level.hiddenItems.size()==itemCount);

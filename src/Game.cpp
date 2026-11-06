@@ -128,14 +128,11 @@ bool Game::update(int deltaTime)
 		return bPlay;
 	}
 
-	// El último atajo abre la sala del jefe mientras falta Forest V.
+	// Las teclas 1 a 5 cargan el nivel indicado si existe.
 	for (int number = 1; number <= LevelSelect::LEVEL_COUNT; ++number) {
-		if (!consumeKey(GLFW_KEY_0 + number)) continue;
-		const int target = number == LevelSelect::LEVEL_COUNT && !Scene::levelExists(number)
-			? Scene::LEVEL_COUNT : number;
-		if (!Scene::levelExists(target)) continue;
-		if (target <= LevelSelect::LEVEL_COUNT) unlockLevel(target);
-		fadeTo(PLAYING, target, state != PLAYING);
+		if (!consumeKey(GLFW_KEY_0 + number) || !Scene::levelExists(number)) continue;
+		unlockLevel(number);
+		fadeTo(PLAYING, number, state != PLAYING);
 		return bPlay;
 	}
 
