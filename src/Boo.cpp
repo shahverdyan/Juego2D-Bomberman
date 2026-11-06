@@ -2,7 +2,7 @@
 #include <cmath>
 #include "Boo.h"
 
-// boo-atlas.png (tools/build_boo.py): 6 columnas x 2 filas de 20x16 píxeles.
+// boo-atlas.png: 6 columnas x 2 filas de 20x16 píxeles.
 // Fila 0 mira a la izquierda y fila 1 a la derecha.
 // Columnas 0-3 persiguiendo, columna 4 escondido, columna 5 muerte (ojos cerrados).
 enum BooAnims { CHASE_LEFT, CHASE_RIGHT, HIDE_LEFT, HIDE_RIGHT, DEATH_LEFT, DEATH_RIGHT };

@@ -2,7 +2,7 @@
 
 // Objetos escondidos en los arbustos (tile de follaje). Aparecen cuando una
 // explosión destruye su arbusto y se recogen al tocarlos.
-// El orden coincide con las celdas de items-atlas.png (tools/build_items.py).
+// El orden coincide con las celdas de items-atlas.png.
 enum ItemType {
     ITEM_FIRE_UP,  // +1 alcance de la explosión
     ITEM_BOMB_UP,  // +1 bomba simultánea

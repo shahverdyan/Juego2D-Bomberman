@@ -3,7 +3,7 @@
 #include "Shooter.h"
 #include "Audio.h"
 
-// Atlas shooter-atlas.png (tools/build_shooter.py): 8 columnas x 3 filas de 32x48.
+// Atlas shooter-atlas.png: 8 columnas x 3 filas de 32x48.
 // Fila 0 mira a la izquierda, fila 1 a la derecha.
 // Columnas: 0-3 caminar, 4 alerta, 6-7 disparo.
 // Fila 2, muerte: el fotograma de alerta boca abajo (col 0 izquierda, col 1 derecha).

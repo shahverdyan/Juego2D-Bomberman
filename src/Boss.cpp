@@ -5,7 +5,7 @@
 #include "Audio.h"
 #include "Statue.h"
 
-// boss-atlas.png (tools/build_boss.py): 4 fotogramas de 32x32 dibujados a escala 2.
+// boss-atlas.png: 4 fotogramas de 32x32 dibujados a escala 2.
 // 0-1 reposo, 2 alas levantadas (ataque), 3 herido.
 enum BossAnims { IDLE, WINGS_UP, HURT };
 // boss-fireball.png: 6 fotogramas de 16x16; 0-2 bola latiendo, 3-5 estallido.

@@ -4,7 +4,7 @@ Barra inferior rosa, de una sola fila. Usa iconos 8x8 de la tercera fila de la h
 `Game Boy _ GBC - Pocket Bomberman - Characters - Overworld (Color).gif`.
 El atlas de HUD conserva los píxeles de los iconos; solo se transparenta su fondo rosa
 para integrarlos con el fondo de la captura. Números 8x8 basados en el estilo de la referencia.
-Generador: `python tools/build_original_hud.py` (Pillow). Catálogo: hud-original-atlas.json.
+Catálogo: hud-original-atlas.json.
 
 La fila lógica mide 160x8; se dibuja a 640x32, con escala entera x4.
 Orden: reloj + m:ss, corazón si está activo a la izquierda de cara + vidas de reserva, T + enemigos,

@@ -23,7 +23,8 @@ void Game::init()
 	gameOver = new Screen();
 	gameOver->init("images/game-over.jpeg", scene.getShaderProgram());
 	victory = new Screen();
-	victory->init("images/victory.jpeg", scene.getShaderProgram());
+	// 640x608, el tamaño de la ventana: se dibuja 1:1 y el título se ve nítido.
+	victory->init("images/victory.png", scene.getShaderProgram());
 
 	// Cuadro negro para los fundidos: una textura de 1x1 basta, porque el color
 	// final lo pone el uniform "color" (negro con la transparencia del fundido).
@@ -177,7 +178,10 @@ bool Game::update(int deltaTime)
 			const int next = nextLevel(scene.getLevel());
 			if (next != 0) {
 				unlockLevel(next);
-				fadeTo(PLAYING, next, false, Audio::LEVEL_CLEAR_JINGLE);
+				// Al pasar a la sala del jefe (el último nivel) no suena el jingle:
+				// se entra directamente con la música del jefe.
+				const bool toBoss = (next == Scene::LEVEL_COUNT);
+				fadeTo(PLAYING, next, false, toBoss ? Audio::NO_MUSIC : Audio::LEVEL_CLEAR_JINGLE);
 			}
 			else fadeTo(VICTORY, 0, false, Audio::VICTORY_JINGLE);
 		}

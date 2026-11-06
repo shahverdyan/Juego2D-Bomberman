@@ -1,3 +1,9 @@
+# Merge de cristian en main (6 noviembre 2026)
+
+- Conflicto con el nivel 3 de Aleks: build_menu.py, build_hud_font.py y build_world1.py se conservan (los usa
+  para el selector Forest I-V, la fuente en negrita y Forest III), y vuelven sus menciones en docs y comentarios.
+- ESTADO.md y MAPAS.md combinados conservando las dos versiones.
+
 # Avisos en negrita (6 noviembre 2026)
 
 - GOD MODE e INVENCIBILIDAD usan la variante en negrita de la fuente pixelada, con trazos de tres píxeles.
@@ -16,6 +22,54 @@
 - El selector muestra Forest I a Forest V. Las placas de 40 píxeles contienen los rótulos completos en el fondo y en los sprites normales y seleccionados.
 - Forest III implementa el borrador ampliado de 34×18 en level03.tmj y level03.txt. Rick empieza en fila 16, columna 3. Hay siete Koopas, corazón dorado, Bomb Up, Fire Up y portal central.
 - Verificada la conversión de Tiled y el arranque en Debug y Release. Capturas del juego comprueban la tecla 3, la casilla de inicio y los cinco rótulos en el selector.
+
+# Pantalla de victoria (6 noviembre 2026)
+
+- Nueva images/victory.png de 640x608 (tamaño de ventana, se dibuja 1:1): fondo de la antigua victory.jpeg reducido,
+  sin su título borroso ni el texto ENHORABUENA (se conservan confeti y fuegos), y una franja oscura superpuesta arriba con WORLD CLEAR!! en fuente pixel propia.
+  Se borra victory.jpeg (queda en git). Generada con un script temporal de Pillow, no incluido en tools.
+- Verificado: Debug y Release compilan sin avisos y copian la imagen; cinco pruebas ocultas con código 0
+  (Game::init carga todas las pantallas).
+
+# Limpieza de tools (6 noviembre 2026)
+
+- Borrados los generadores que nadie ejecuta (sus PNG ya están en src/images): build_player, build_koopa, build_boo,
+  build_boss, build_portal, build_shooter, build_items, build_original_hud y el obsoleto build_boss_arena (escribía la sala vieja de 10x9). También tools/__pycache__.
+- Quedan tiled_map.py (conversor Tiled, usado por ActualizarMapa.cmd y tests/tiled_map_test.py) y
+  build_original_effects.py (usado por tests/original_effects_test.py).
+- Quitadas sus menciones en comentarios del código (se conserva la descripción de cada atlas) y en EDITAR_MAPAS,
+  MAPAS, HUD, EFECTOS_ORIGINALES y AGENTS. Las secciones antiguas de este archivo se dejan como historial.
+- Verificado: Debug y Release compilan sin avisos; cinco pruebas ocultas con código 0; las dos pruebas Python PASS.
+
+# Sin bomba al reaparecer (6 noviembre 2026)
+
+- El Espacio pulsado durante la animación de muerte quedaba guardado en Game::pressed y Player::update lo usaba en
+  el primer frame tras reaparecer, poniendo una bomba en el inicio. Player::updateDeath ahora lo descarta.
+- Verificado: Debug y Release compilan sin avisos; cinco pruebas ocultas con código 0. Pendiente probarlo jugando.
+
+# Sin jingle al entrar en la sala del jefe (6 noviembre 2026)
+
+- Game::update: al superar un nivel cuyo siguiente es el último (Scene::LEVEL_COUNT, el jefe) no suena
+  LEVEL_CLEAR_JINGLE; el fundido entra directo y updateMusic pone BOSS_MUSIC. El resto de niveles mantiene el jingle.
+- Verificado: Debug y Release compilan sin avisos; cinco pruebas ocultas con código 0. Pendiente escucharlo jugando.
+
+# Sala del jefe ampliada (6 noviembre 2026)
+
+- level06 pasa a 15x13 con seis pares de plataformas. Era inválido porque ITEMS apuntaba a (2,6) y (12,6), y el
+  cargador exige que cada objeto esté sobre un arbusto; los arbustos están en (1,6) y (13,6). Objetos movidos ahí.
+- Verificado: el cargador real (LevelData) acepta level01, level02 y level06; la versión anterior da inválido.
+  Debug y Release compilados y copiados a build; cinco pruebas ocultas con código 0 en ambos.
+- level06.tmj regenerado desde el .txt (to-tiled); ida y vuelta por Tiled identica y tests/tiled_map_test.py PASS.
+  Ojo: tools/build_boss_arena.py aun escribe la sala vieja de 10x9 si se ejecuta.
+- Rediseno en Tiled (arbustos en FOREGROUND): los puntos Fire Up y Bomb Up estaban una casilla a la derecha de sus
+  arbustos; movidos a (1,5) y (7,5) y .txt regenerado. LevelData lo acepta; Debug y Release compilan y pasan las pruebas.
+- Recordatorio: editar un .txt de nivel no basta; hay que compilar (o Recompilar en Visual Studio) para copiarlo a build.
+
+# Avisos de variables sin inicializar (6 noviembre 2026)
+
+- `Game::bPlay` se inicializa a `true` en su declaración (Game.h) y `Scene::currentTime` a 0 en el
+  constructor de Scene. Release compila y pasa las cinco pruebas ocultas; el enlace de Debug falló porque
+  `build/Debug/Bomberman.exe` estaba abierto (LNK1168): pendiente recompilar Debug con el juego cerrado.
 
 # Enemigos y objetos de Forest (6 noviembre 2026)
 

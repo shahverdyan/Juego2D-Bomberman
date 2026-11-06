@@ -13,7 +13,7 @@
 #define FALL_STEP 4
 
 
-// Atlas rick-atlas.png (tools/build_player.py): 7 columnas x 2 filas de 24x24.
+// Atlas rick-atlas.png: 7 columnas x 2 filas de 24x24.
 // Fila 0 mira a la derecha, fila 1 a la izquierda.
 // Columnas: 0 quieto, 1-3 caminar, 4 subiendo, 5 cayendo, 6 muerte (de frente).
 enum PlayerAnims
@@ -120,6 +120,9 @@ void Player::startDying()
 // Sin colisiones: quieto DEATH_PAUSE_MS, luego salta y cae atravesando el suelo.
 void Player::updateDeath(int deltaTime)
 {
+	// Se descarta el Espacio pulsado mientras se muere: si no, se guardaría
+	// y la bomba aparecería en el punto de inicio nada más reaparecer.
+	Game::instance().consumeKey(GLFW_KEY_SPACE);
 	const bool jumpNow = deathMs < DEATH_PAUSE_MS && deathMs + deltaTime >= DEATH_PAUSE_MS;
 	deathMs += deltaTime;
 	if (jumpNow) body.vy = -420.f;
