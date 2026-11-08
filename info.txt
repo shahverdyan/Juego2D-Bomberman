@@ -10,7 +10,7 @@ Pantallas
   créditos, selección de nivel, game over y victoria.
 - Transiciones con fundido a negro entre todas las pantallas y niveles.
 - Selección de nivel con la torre de mundos original: cada nivel se desbloquea
-  al superar el anterior.
+  al superar el anterior. El progreso del selector dura hasta cerrar el juego.
 
 Jugador y bombas
 - Movimiento lateral y salto con física propia (gravedad, colisiones con el
@@ -18,22 +18,27 @@ Jugador y bombas
   casillas, como la pantalla de la Game Boy.
 - Bombas alineadas a las casillas, suspendidas en el aire (sin gravedad) y
   sólidas: el jugador puede subirse encima de ellas para alcanzar sitios altos.
-- Mecha de 2 segundos con pulso que acelera antes de explotar. La explosión
-  en cruz se detiene en el terreno sólido y daña al jugador y a los enemigos.
-- 3 vidas. Al perder una vida el nivel se reinicia (enemigos, arbustos,
-  objetos y reloj) y se conservan las mejoras. Sin vidas, o al acabarse el
-  tiempo, game over y vuelta al menú principal.
+- Mecha de 2 segundos con pulso que se acelera antes de explotar. La explosión
+  dura 0,4 segundos, se extiende en cruz y daña al jugador y a los enemigos.
+  El terreno sólido la detiene y los arbustos alcanzados se rompen.
+- Tres vidas. Si quedan vidas, Rick vuelve al inicio del nivel y se restauran
+  los enemigos, arbustos, objetos y cascadas. El reloj vuelve a 4:00. Se
+  conservan las mejoras de bombas y alcance. Perder la última vida o agotar
+  el tiempo lleva a la pantalla de Game Over.
 
 Escenario
-- Niveles con tiles originales de Pocket Bomberman.
-- Arbustos destructibles por el fuego, que pueden esconder objetos.
-- Cascadas que el fuego interrumpe temporalmente.
+- Cinco niveles (Forest I a Forest V) con tiles originales de Pocket Bomberman.
+  El portal de Forest V lleva a la sala del jefe final.
+- Arbustos sólidos que pueden esconder objetos y se rompen con explosiones.
+- Cascadas sólidas que se retraen en un segundo al alcanzar su cabecera
+  con una explosión.
 
 Objetos (los cuatro del original)
 - Fire Up: aumenta en 1 el alcance de la explosión (máximo 4).
 - Bomb Up: aumenta en 1 las bombas simultáneas (máximo 4).
-- Corazón dorado: absorbe el siguiente golpe sin perder vida.
-- Estrella: invulnerabilidad durante 10 segundos.
+- Corazón dorado: absorbe el siguiente golpe sin perder una vida. Al perder
+  el corazón, Rick parpadea y queda protegido durante dos segundos.
+- Armored Jacket (estrella): invulnerabilidad durante diez segundos.
 
 Enemigos (tres comportamientos distintos)
 - Shooter: patrulla su plataforma y, si ve al jugador delante en su fila, se
@@ -48,11 +53,12 @@ Jefe final (último nivel)
   teletransporta para sorprender al jugador. Ataca por turnos con dos bolas
   grandes que rebotan, cuatro bolas en diagonal y una estatua que cae del
   techo sobre el jugador.
-- Necesita 5 impactos; tras cada uno queda un momento invulnerable.
+- Necesita cinco impactos. Tras cada golpe tiene un periodo breve de invulnerabilidad.
 
 HUD
-- Tiempo restante, vidas (y corazón dorado), enemigos que quedan, bombas
-  simultáneas y alcance de la explosión.
+- Tiempo restante, vidas de reserva (2, 1, 0), corazón dorado, enemigos que
+  quedan, bombas simultáneas y alcance de la explosión.
+- Aviso GOD MODE y cuenta atrás de la invulnerabilidad de Armored Jacket.
 
 Sonido
 - Música para el menú, los niveles y el jefe, y jingles de nivel superado,
@@ -62,20 +68,29 @@ Sonido
 
 INSTRUCCIONES
 -------------
-Objetivo: en cada nivel hay que eliminar a todos los enemigos con las bombas.
-Entonces se abre el portal; hay que entrar en él antes de que se acabe el
-tiempo (4:00). En la sala del jefe, la victoria llega al derrotarlo.
+Para jugar, extrae el ZIP y abre Binari\Bomberman.exe en Windows con OpenGL.
+Mantén el ejecutable junto a las carpetas images, levels, shaders y sounds.
+Para compilar, abre Projecte compilable\Bomberman.sln en Visual Studio y
+selecciona Win32 y Debug o Release (MSVC v145 y Windows SDK 10.0).
+
+Cada nivel empieza con 4:00. Elimina a todos los enemigos con las bombas y
+entra en el portal cuando se abra. Tras Forest V, derrota al jefe para ganar.
 
 Controles:
   Flechas izquierda/derecha o A/D   Moverse
   Flecha arriba o W                 Saltar
   Espacio                           Poner bomba
-  Esc                               Volver al menú / selección de nivel
-  Flechas arriba/abajo + Espacio    Moverse y elegir en los menús
+  Flechas arriba/abajo o W/S         Mover el cursor en los menús
+  Espacio o Enter                   Confirmar la opción del menú
+  Esc                               Volver al selector durante la partida
+                                    o desde la victoria. En Game Over, el
+                                    selector, instrucciones y créditos,
+                                    vuelve al menú principal. En el menú
+                                    principal, cierra el juego.
 
 Teclas de prueba:
-  G      Activa o desactiva la invulnerabilidad (también para el reloj)
-  K      Elimina a todos los enemigos (y abre el portal)
-  1-5    Carga directamente el nivel 1 a 5 (si existe)
-  R      Devuelve al jugador al inicio del nivel
-
+  G      Alterna el modo invulnerable. Si el reloj llega a 0:00 con el modo
+         activo, se reinicia a 4:00. El modo se apaga al salir del nivel.
+  K      Elimina a los enemigos y abre el portal.
+  1-5    Carga directamente Forest I a Forest V.
+  R      Vuelve al inicio del nivel y borra las bombas y proyectiles.

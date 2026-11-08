@@ -1,6 +1,6 @@
 """Genera las pantallas de instrucciones, créditos y selección de nivel, y sus sprites.
 
-El fondo del menú principal (menu-background.jpeg), game-over.jpeg y victory.jpeg
+El fondo del menú principal (menu-background.jpeg), game-over.jpeg y victory.png
 son imágenes hechas a mano: este script no las genera.
 
 Piezas usadas:

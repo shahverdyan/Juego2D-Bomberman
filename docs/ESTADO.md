@@ -1,3 +1,24 @@
+# Paquete de entrega (6 noviembre 2026)
+
+- Actualizado info.txt con autores, funcionalidades, arranque y controles de la versión final.
+- Preparado AleksShahverdyan.zip con info.txt, Binari y Projecte compilable. Probados el arranque del binario y la compilación Win32 desde el ZIP extraído.
+- El título de la ventana muestra solo Bomberman. Verificados Debug y Release y actualizado el ZIP.
+- Reducido Projecte compilable en el ZIP. Se retiraron tests, tools, ActualizarMapa.cmd y docs y se verificó la compilación Release Win32 desde la copia extraída.
+- Para completar la entrega del enunciado queda añadir demo.avi de un minuto (p. 3).
+
+# Revisión y limpieza final (6 noviembre 2026)
+
+- Retirados sprites de prueba, archivos de la plantilla, FreeType, binarios duplicados de SOIL y variantes de GLFW/GLEW ajenas a esta compilación. Se conservaron los mapas de Tiled, los recursos de regeneración y los créditos.
+- Debug y Release copian los recursos de ejecución. Release enlaza estáticamente la biblioteca de C++ y GLFW, y arranca con el ejecutable y sus recursos en una carpeta separada.
+- Verificados los seis mapas frente a Tiled, las pruebas CPU y nativas, la descodificación de las seis pistas y catorce efectos, la campaña, la victoria y Game Over.
+- Pendientes de entrega (p. 3 del enunciado): grabar demo.avi y preparar NomCognoms.zip.
+
+# Forest IV de descenso en zigzag (6 noviembre 2026)
+
+- Mapa de 34 × 22 con los once enemigos y los seis objetos indicados. Rick empieza en (4, 2) y el portal está en (17, 29), en orden fila, columna.
+- Ajustadas las repisas de los laterales y el acceso a la cascada central para que se pueda regresar a las galerías anteriores. La cascada derecha queda en la columna 32.
+- Verificados el recorrido, los seis objetos, el ida y vuelta en Tiled, Debug y Release. La prueba integrada cubre la tecla 4, el selector, las cascadas y las transiciones de Forest III a IV y de IV a V.
+
 # Forest III de cascadas y Forest V de ruinas (6 noviembre 2026)
 
 - Forest III usa el boceto de 34 × 19. Rick empieza en (16, 6). Se colocaron seis enemigos y seis objetos en las casillas acordadas (fila, columna).
