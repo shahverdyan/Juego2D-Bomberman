@@ -61,7 +61,7 @@ compila en Visual Studio y ejecuta. Si prefieres hacerlo desde terminal, con Pyt
 python tools/tiled_map.py to-game src/levels/level01.tmj src/levels/level01.txt
 ```
 
-Para Forest II, III o V, sustituye ambos `level01` por `level02`, `level03` o `level05`, respectivamente.
+Para editar otro nivel, sustituye ambos `level01` por su nombre, por ejemplo `level04` para Forest IV.
 
 Si usas el lanzador de Python de Windows, sustituye `python` por `py -3`.
 El conversor solo utiliza la biblioteca estándar de Python, sin paquetes adicionales.

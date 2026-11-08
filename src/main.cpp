@@ -59,7 +59,7 @@ int main(int argc, char** argv)
 	/* Create a windowed mode window and its OpenGL context */
 	glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
 	if (smoke) glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
-	window = glfwCreateWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Bomberman | Arrows/A-D: move | Space: Place Bomb | R: reset", NULL, NULL);
+	window = glfwCreateWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Bomberman", NULL, NULL);
 	if (!window)
 	{
 		glfwTerminate();

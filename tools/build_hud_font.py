@@ -1,8 +1,8 @@
-"""Genera la fuente pixel 5x7 y la variante en negrita para los avisos del HUD.
+"""Genera la fuente pixelada en negrita para los avisos del HUD.
 
 Cada carácter ocupa una celda de 6x8 (5x7 + 1 px de separación) en una sola
-fila, en el orden de CHARS. La última celda es un bloque sólido que el HUD usa
-como fondo de la franja. El orden debe coincidir con STATUS_CHARS en Hud.cpp.
+fila, en el orden de CHARS. La última celda es de relleno. El orden debe
+coincidir con STATUS_CHARS en Hud.cpp.
 
 Uso: python tools/build_hud_font.py
 """
@@ -11,8 +11,7 @@ from pathlib import Path
 from PIL import Image
 
 ROOT = Path(__file__).resolve().parent.parent
-OUTPUT = ROOT / "src" / "images" / "hud-font.png"
-BOLD_OUTPUT = OUTPUT.with_name("hud-status-bold.png")
+BOLD_OUTPUT = ROOT / "src" / "images" / "hud-status-bold.png"
 CELL_W, CELL_H = 6, 8
 TEXT = (255, 255, 255, 255)
 PANEL = (16, 16, 24, 255)
@@ -71,8 +70,6 @@ def main():
     for y in range(CELL_H):
         for x in range(CELL_W):
             atlas.putpixel((solid + x, y), PANEL)
-    atlas.save(OUTPUT)
-    print("Generado", OUTPUT, atlas.size)
     # Engrosa un píxel a escala de pantalla. Queda un píxel de separación
     # entre celdas de 12x16 y el juego sigue dibujando cada letra una sola vez.
     scaled = atlas.resize((atlas.width * 2, atlas.height * 2), Image.Resampling.NEAREST)

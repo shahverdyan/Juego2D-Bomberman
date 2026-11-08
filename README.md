@@ -9,21 +9,21 @@ La aplicación incluye bombas, enemigos, HUD, vidas, objetos y obstáculos inter
 La cámara muestra 10x9 bloques de juego, con HUD independiente.
 
 - Flechas izquierda/derecha o A/D: moverse.
-- Espacio: colocar una bomba al pulsar (mecha de 3 s; mantener no repite).
+- Espacio: colocar una bomba al pulsar (mecha de 2 s, mantener pulsado no repite).
 - Flecha arriba o W: saltar al pulsar; se puede aterrizar sobre bombas.
 - La explosión inicial tiene alcance 1 (una celda por dirección), se detiene ante terreno sólido y destruye arbustos físicos; una explosión en la cabecera de una cascada la retrae en 1 s.
-- La capacidad y el alcance tienen valores y métodos de mejora para futuros power-ups.
-- R: regresar al inicio.
+- Bomb Up aumenta la capacidad y Fire Up el alcance, hasta 4 en ambos casos.
+- 1–5: cargar Forest I–V. R: regresar al inicio.
 - G: invulnerabilidad. K: eliminar a todos los enemigos (abre el portal).
 - Menú y selección de nivel: flechas arriba/abajo o W/S para elegir, Espacio o Enter para aceptar.
-- Escape: desde la partida, game over o victoria vuelve a la selección de nivel; desde ella,
-  instrucciones o créditos vuelve al menú principal; en el menú principal, salir.
+- Escape vuelve al selector desde la partida o la victoria. Desde el selector,
+  instrucciones, créditos o Game Over vuelve al menú principal. En el menú principal, sale del juego.
 
 ## Carpetas
 
 - `src`: código derivado de 02-Bubble y recursos.
 - `src/images/tilesets`: imagen fuente, atlas extraído y catálogo de tiles originales.
-- `src/levels/level01.txt`: mapa propio del mundo 1, en formato TILEMAP2.
+- `src/levels`: Forest I–V y sala del jefe, con los mapas del juego (.txt) y de Tiled (.tmj).
 - `libs`: bibliotecas del laboratorio, sin duplicarlas.
 - `docs`: PDF, requisitos, estado y guía de mapas.
 - `tests`: pruebas de movimiento y lógica de bombas sin OpenGL.
@@ -51,10 +51,11 @@ La última orden abre un contexto OpenGL oculto, renderiza cinco frames, guarda
 SOIL se compila desde los fuentes C incluidos para evitar incompatibilidades de compilador.
 Las bibliotecas antiguas pueden producir avisos de tipos o símbolos sin impedir la ejecución.
 
-El ejecutable de esta fase no es todavía el paquete final de entrega.
+Para ejecutar la versión Release desde otra carpeta, copia `Bomberman.exe` junto a
+`images`, `levels`, `shaders` y `sounds` de `build/Release`. Requiere Windows con OpenGL.
+Release incorpora la biblioteca de ejecución de C++ en el ejecutable.
 
-Edición gráfica: abre src/levels/level01.tmj en Tiled, guarda y ejecuta ActualizarMapa.cmd.
-Después cierra la partida anterior y compila. Guía completa: docs/EDITAR_MAPAS.md.
+Para editar con Tiled y convertir un mapa al formato del juego, consulta `docs/EDITAR_MAPAS.md`.
 
 HUD inferior original: tiempo, vidas 2/1/0, protección dorada, enemigos, bombas y alcance.
 El corazón absorbe un golpe sin sumar vidas y activa 2 s de parpadeo. Ver docs/HUD.md.

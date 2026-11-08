@@ -8,12 +8,8 @@
 *.pdb
 *.ilk
 
-!libs/SOIL/
-!libs/SOIL/Win32/
-!libs/SOIL/Win32/Debug/
-!libs/SOIL/Win32/Debug/SOIL.lib
-!libs/SOIL/Win32/Release/
-!libs/SOIL/Win32/Release/SOIL.lib
+.Rhistory
+__pycache__/
 
 !libs/glew-1.13.0/lib/
 !libs/glew-1.13.0/lib/Release/

@@ -4,6 +4,12 @@ El mapa de cascadas ocupa 34 × 19 casillas. Abre `src/levels/level03.tmj` en Ti
 Rick empieza en fila 16, columna 6. La puerta está en fila 3, columna 5.
 La vista general está en `docs/level03-preview.png`.
 
+# Forest IV
+
+El descenso en zigzag ocupa 34 × 22 casillas. Abre `src/levels/level04.tmj` en Tiled.
+Rick empieza en fila 4, columna 2. El portal está en fila 17, columna 29 y lleva a Forest V.
+La vista general está en `docs/level04-preview.png`.
+
 # Forest V: cámara y obstáculos
 
 Para editar Forest V gráficamente, abre `src/levels/level05.tmj` con Tiled y lee EDITAR_MAPAS.md.
@@ -41,7 +47,7 @@ es asimétrico, con formas huecas inspiradas en las estructuras del original:
 - Paso inferior continuo: permite recuperar la ruta después de caer. No hay pozos mortales.
 
 La imagen general está en `docs/level05-preview.png`. La puerta usa el marcador (43,7) y lleva a la sala del jefe (level06).
-La distribución se puede recorrer con las físicas actuales, sin depender de bombas aún no implementadas.
+Hay caminos de vuelta al inicio desde las plataformas y las cámaras inferiores.
 
 ## Gráficos originales
 
@@ -51,7 +57,7 @@ La distribución se puede recorrer con las físicas actuales, sin depender de bo
 - Se conservan exactamente los píxeles de 16 tiles de 16 x 16; se dibujan a 32 x 32 con filtro nearest.
 - Se excluyen la firma y la ilustración de la parte inferior de la imagen. Se conservan en el original.
 - El rip suministrado está firmado por Fret & Woppet; juego de Hudson Soft. Mantener estos créditos en la entrega.
-- El personaje sigue siendo el provisional de Bubble. Las cascadas ahora tienen colisión y animación de apertura.
+- Las cascadas tienen colisión y animación de apertura.
 - El tile 16 (`door_marker`) marca la casilla inferior izquierda de la puerta-portal (2x2 tiles).
   El juego no lo dibuja: coloca ahí el portal, que se abre al no quedar enemigos.
 
@@ -76,13 +82,11 @@ Las dimensiones del mapa y del atlas van en columnas/filas. SPAWN es la celda in
 IDs gráficos: 0 vacío; 1 a 16 según
 el catálogo, por filas del atlas. COLLISION decide qué bloquea al jugador de forma
 independiente del aspecto: 1 sólido, 0 atravesable. El exterior del mapa es sólido.
-El follaje decorativo (tile 10) puede desaparecer al recibir una explosión; esto no
-cambia la colisión del nivel. Si estaba en BACKGROUND se restaura el tile base 1; si
+Los arbustos (tile 10) bloquean el paso hasta que una explosión los destruye. Si estaba en BACKGROUND se restaura el tile base 1; si
 estaba en FOREGROUND se deja vacío, mostrando el fondo de la capa inferior.
 
 El cargador valida dimensiones, filas, IDs y que el punto de aparición esté libre.
-Dibuja BACKGROUND antes de FOREGROUND. Las explosiones pueden eliminar el tile 10 de follaje;
-los bloques sólidos aún no son destructibles. No hay importación de Tiled.
+Dibuja BACKGROUND antes de FOREGROUND. Para importar desde Tiled, usa `tools/tiled_map.py`.
 
 Para modificar el diseño a mano, edita las capas en `src/levels/level05.txt` y compila.
 Para regenerar el diseño base y el atlas con Python + Pillow:
